@@ -15,494 +15,538 @@ from wuwa.echo import score_build, RESONATOR_ARCHETYPES, VALID_STATS, Echo, Echo
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-ACCENT     = "#3B82F6"
-ACCENT_HOV = "#2563EB"
-BG         = "#0F172A"
-CARD       = "#1E293B"
-CARD2      = "#273449"
-TEXT       = "#F1F5F9"
-SUBTEXT    = "#94A3B8"
-GREEN      = "#22C55E"
-RED        = "#EF4444"
-GOLD       = "#EAB308"
-PURPLE     = "#A855F7"
+# ── Wuthering Waves colour palette (extracted from game UI) ──────────────────
+BG      = "#070B14"   # main background
+PANEL   = "#0C1525"   # card / panel
+PANEL2  = "#101E30"   # elevated panel
+GOLD    = "#EAB820"   # primary accent – titles & highlights
+GOLD2   = "#C89818"   # dimmer gold – borders, ghost buttons
+ORANGE  = "#FF8C1A"   # important numbers
+WHITE   = "#F0F0F0"   # body text
+GREY    = "#7A8A9E"   # subtext / labels
+PURPLE  = "#7B50D4"   # 4-star / collab tag
+GREEN   = "#3EC98A"   # success / linked
+RED     = "#D94040"   # error
+STAR5   = "#FFD700"   # 5-star gold
+BORDER  = "#1C2E46"   # panel border
 
 POOL_IDS = [1, 2, 3, 4]
 
+FONT_TITLE  = ("Segoe UI", 22, "bold")
+FONT_HEAD   = ("Segoe UI", 14, "bold")
+FONT_BODY   = ("Segoe UI", 13)
+FONT_SMALL  = ("Segoe UI", 11)
+FONT_LABEL  = ("Segoe UI", 10)
+FONT_TAG    = ("Segoe UI", 9, "bold")
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
-def run_in_thread(fn):
-    threading.Thread(target=fn, daemon=True).start()
+def run_bg(fn): threading.Thread(target=fn, daemon=True).start()
 
+def tag(parent, text, color=GOLD, bg=None, **kw):
+    bg = bg or "#2A1E00" if color == GOLD else "#1E1040"
+    return ctk.CTkLabel(parent, text=text.upper(), font=FONT_TAG,
+                        text_color=color, fg_color=bg,
+                        corner_radius=4, **kw)
 
-def status_label(parent, **kwargs):
-    return ctk.CTkLabel(parent, text_color=SUBTEXT, font=("Segoe UI", 12), **kwargs)
+def wlabel(parent, text, size=13, color=WHITE, bold=False, **kw):
+    w = "bold" if bold else "normal"
+    return ctk.CTkLabel(parent, text=text, font=("Segoe UI", size, w),
+                        text_color=color, **kw)
 
+def panel(parent, **kw):
+    return ctk.CTkFrame(parent, fg_color=PANEL, border_color=BORDER,
+                        border_width=1, corner_radius=10, **kw)
 
-def heading(parent, text, size=18, **kwargs):
-    return ctk.CTkLabel(parent, text=text, font=("Segoe UI", size, "bold"),
-                        text_color=TEXT, **kwargs)
+def panel2(parent, **kw):
+    return ctk.CTkFrame(parent, fg_color=PANEL2, border_color=BORDER,
+                        border_width=1, corner_radius=8, **kw)
 
+def gold_btn(parent, text, cmd, w=200, **kw):
+    return ctk.CTkButton(parent, text=text, command=cmd, width=w, height=36,
+                         fg_color=GOLD, hover_color=GOLD2, text_color="#07080D",
+                         font=("Segoe UI", 13, "bold"), corner_radius=6, **kw)
 
-def card(parent, **kwargs):
-    return ctk.CTkFrame(parent, fg_color=CARD, corner_radius=12, **kwargs)
+def ghost_btn(parent, text, cmd, w=160, **kw):
+    return ctk.CTkButton(parent, text=text, command=cmd, width=w, height=36,
+                         fg_color="transparent", hover_color=PANEL2,
+                         border_color=GOLD2, border_width=1,
+                         text_color=GOLD, font=FONT_BODY, corner_radius=6, **kw)
 
+def hdivider(parent):
+    ctk.CTkFrame(parent, height=1, fg_color=BORDER).pack(fill="x", padx=0, pady=12)
 
-def primary_btn(parent, text, command, width=200, **kwargs):
-    return ctk.CTkButton(
-        parent, text=text, command=command, width=width,
-        fg_color=ACCENT, hover_color=ACCENT_HOV,
-        font=("Segoe UI", 13, "bold"), corner_radius=8, **kwargs
-    )
-
-
-def ghost_btn(parent, text, command, width=160, **kwargs):
-    return ctk.CTkButton(
-        parent, text=text, command=command, width=width,
-        fg_color=CARD2, hover_color="#334155",
-        font=("Segoe UI", 12), corner_radius=8, **kwargs
-    )
-
-
-# ---------------------------------------------------------------------------
-# Sidebar navigation
-# ---------------------------------------------------------------------------
+# ── Sidebar ──────────────────────────────────────────────────────────────────
 
 class Sidebar(ctk.CTkFrame):
-    def __init__(self, master, on_select, **kwargs):
-        super().__init__(master, fg_color="#0B1120", corner_radius=0, width=200, **kwargs)
+    ITEMS = [("  Home", "🏠"), ("  Convene", "✦"), ("  Echoes", "◈")]
+
+    def __init__(self, master, on_select, **kw):
+        super().__init__(master, fg_color="#05090F", corner_radius=0, width=188, **kw)
         self.on_select = on_select
-        self.buttons = {}
+        self.btns = {}
         self._active = None
 
-        heading(self, "  WuWa Opti", size=16).pack(pady=(28, 32), padx=16, anchor="w")
+        # Logo
+        logo = ctk.CTkFrame(self, fg_color="transparent")
+        logo.pack(fill="x", padx=20, pady=(28, 0))
+        ctk.CTkLabel(logo, text="WUWA", font=("Segoe UI", 17, "bold"),
+                     text_color=GOLD).pack(side="left")
+        ctk.CTkLabel(logo, text=" OPTI", font=("Segoe UI", 17, "bold"),
+                     text_color=WHITE).pack(side="left")
 
-        for name in ("Home", "Convene", "Echoes"):
+        ctk.CTkFrame(self, height=1, fg_color=BORDER).pack(fill="x", padx=0, pady=20)
+
+        for label, icon in self.ITEMS:
+            name = label.strip()
             btn = ctk.CTkButton(
-                self, text=f"  {name}", anchor="w", width=180, height=40,
-                fg_color="transparent", hover_color=CARD2,
-                font=("Segoe UI", 13), corner_radius=8,
-                command=lambda n=name: self._select(n)
+                self, text=f"{icon}{label}", anchor="w", width=168, height=42,
+                fg_color="transparent", hover_color=PANEL2,
+                text_color=GREY, font=("Segoe UI", 13),
+                corner_radius=6, command=lambda n=name: self._pick(n)
             )
             btn.pack(pady=2, padx=10)
-            self.buttons[name] = btn
+            self.btns[name] = btn
 
-        # highlight Home without triggering the callback yet
-        self.buttons["Home"].configure(fg_color=ACCENT)
+        self.btns["Home"].configure(
+            fg_color=PANEL2, text_color=GOLD,
+            border_color=GOLD2, border_width=1
+        )
         self._active = "Home"
 
-    def _select(self, name):
+    def _pick(self, name):
         if self._active:
-            self.buttons[self._active].configure(fg_color="transparent")
-        self.buttons[name].configure(fg_color=ACCENT)
+            self.btns[self._active].configure(
+                fg_color="transparent", text_color=GREY,
+                border_width=0
+            )
+        self.btns[name].configure(
+            fg_color=PANEL2, text_color=GOLD,
+            border_color=GOLD2, border_width=1
+        )
         self._active = name
         self.on_select(name)
 
 
-# ---------------------------------------------------------------------------
-# Home frame
-# ---------------------------------------------------------------------------
+# ── Home ─────────────────────────────────────────────────────────────────────
 
 class HomeFrame(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, fg_color=BG, corner_radius=0, **kwargs)
+    def __init__(self, master, **kw):
+        super().__init__(master, fg_color=BG, corner_radius=0, **kw)
         self._build()
 
     def _build(self):
-        heading(self, "Account", size=22).pack(anchor="w", padx=32, pady=(32, 4))
-        status_label(self, text="Link your Wuthering Waves account to get started.").pack(anchor="w", padx=32, pady=(0, 20))
+        top = ctk.CTkFrame(self, fg_color="transparent")
+        top.pack(fill="x", padx=32, pady=(32, 0))
+        ctk.CTkLabel(top, text="Account", font=FONT_TITLE, text_color=WHITE).pack(anchor="w")
+        ctk.CTkLabel(top, text="Linked Wuthering Waves profile", font=FONT_SMALL,
+                     text_color=GREY).pack(anchor="w", pady=(2, 0))
 
-        c = card(self)
-        c.pack(fill="x", padx=32, pady=8)
+        hdivider(top)
 
-        self.status_icon = ctk.CTkLabel(c, text="⬤", font=("Segoe UI", 14), text_color=SUBTEXT)
-        self.status_icon.grid(row=0, column=0, padx=(20, 8), pady=20)
-        self.status_text = ctk.CTkLabel(c, text="Not linked", font=("Segoe UI", 13, "bold"), text_color=TEXT)
-        self.status_text.grid(row=0, column=1, sticky="w")
-        self.detail_text = ctk.CTkLabel(c, text="", font=("Segoe UI", 11), text_color=SUBTEXT)
-        self.detail_text.grid(row=1, column=1, sticky="w", pady=(0, 16))
+        c = panel(self)
+        c.pack(fill="x", padx=32, pady=(0, 16))
 
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(anchor="w", padx=32, pady=12)
+        self._icon = ctk.CTkLabel(c, text="●", font=("Segoe UI", 16), text_color=GREY)
+        self._icon.grid(row=0, column=0, padx=(20, 10), pady=(20, 4))
+        self._status = ctk.CTkLabel(c, text="Not linked", font=("Segoe UI", 15, "bold"), text_color=WHITE)
+        self._status.grid(row=0, column=1, sticky="w")
+        self._detail = ctk.CTkLabel(c, text="", font=FONT_SMALL, text_color=GREY)
+        self._detail.grid(row=1, column=1, sticky="w", pady=(0, 16))
 
-        self.link_btn = primary_btn(btn_frame, "🔗  Auto-Link Account", self._auto_link, width=220)
-        self.link_btn.pack(side="left", padx=(0, 12))
+        btns = ctk.CTkFrame(self, fg_color="transparent")
+        btns.pack(anchor="w", padx=32, pady=4)
+        self._link_btn = gold_btn(btns, "⬡  Link Account", self._auto_link, w=190)
+        self._link_btn.pack(side="left", padx=(0, 10))
+        ghost_btn(btns, "Paste URL", self._manual_link, w=140).pack(side="left")
 
-        ghost_btn(btn_frame, "Paste URL manually", self._manual_link, width=180).pack(side="left")
-
-        self.log_label = status_label(self, text="")
-        self.log_label.pack(anchor="w", padx=32, pady=(8, 0))
+        self._msg = ctk.CTkLabel(self, text="", font=FONT_SMALL, text_color=GREY)
+        self._msg.pack(anchor="w", padx=32, pady=(10, 0))
 
         self._refresh()
 
     def _refresh(self):
-        creds = load_cached_credentials()
-        if creds:
-            self.status_icon.configure(text_color=GREEN)
-            self.status_text.configure(text="Linked", text_color=GREEN)
-            self.detail_text.configure(
-                text=f"Player ID: {creds['player_id']}   |   Region: {creds['svr_area'].upper()}"
+        c = load_cached_credentials()
+        if c:
+            self._icon.configure(text_color=GREEN)
+            self._status.configure(text="Linked", text_color=GREEN)
+            self._detail.configure(
+                text=f"Player ID: {c['player_id']}   ·   Region: {c['svr_area'].upper()}"
             )
         else:
-            self.status_icon.configure(text_color=SUBTEXT)
-            self.status_text.configure(text="Not linked", text_color=TEXT)
-            self.detail_text.configure(text="")
+            self._icon.configure(text_color=GREY)
+            self._status.configure(text="Not linked", text_color=WHITE)
+            self._detail.configure(text="Open Convene Records in-game, then click Link Account.")
 
     def _auto_link(self):
-        self.link_btn.configure(state="disabled", text="Searching...")
-        self.log_label.configure(text="")
-
+        self._link_btn.configure(state="disabled", text="Searching…")
+        self._msg.configure(text="")
         def task():
             try:
                 creds = load_credentials()
                 save_credentials(creds)
-                self.after(0, lambda: self._on_success(creds))
+                self.after(0, lambda: self._done(creds))
             except RuntimeError as e:
-                self.after(0, lambda: self._on_error(str(e)))
+                self.after(0, lambda: self._fail(str(e)))
+        run_bg(task)
 
-        run_in_thread(task)
-
-    def _on_success(self, creds):
-        self.link_btn.configure(state="normal", text="🔗  Auto-Link Account")
-        self.log_label.configure(text="✓ Account linked successfully!", text_color=GREEN)
+    def _done(self, creds):
+        self._link_btn.configure(state="normal", text="⬡  Link Account")
+        self._msg.configure(text="✓  Account linked successfully!", text_color=GREEN)
         self._refresh()
 
-    def _on_error(self, msg):
-        self.link_btn.configure(state="normal", text="🔗  Auto-Link Account")
-        self.log_label.configure(text=f"✗ {msg.splitlines()[0]}", text_color=RED)
+    def _fail(self, msg):
+        self._link_btn.configure(state="normal", text="⬡  Link Account")
+        self._msg.configure(text=f"✗  {msg.splitlines()[0]}", text_color=RED)
 
     def _manual_link(self):
         dlg = ctk.CTkInputDialog(
-            text="Paste your convene URL below:\n\n(Go to Convene Records in-game, then\nvisit wutheringwaves.kurogames.com\nand copy the URL from the Network tab)",
+            text="Paste your convene URL:\n\n(Open Convene Records in-game,\nthen copy the URL from the\nbrowser Network tab)",
             title="Paste Convene URL"
         )
         url = dlg.get_input()
-        if not url:
-            return
+        if not url: return
         creds = parse_convene_url(url.strip())
         if creds:
             save_credentials(creds)
-            self.log_label.configure(text="✓ Account linked successfully!", text_color=GREEN)
+            self._msg.configure(text="✓  Account linked!", text_color=GREEN)
             self._refresh()
         else:
-            self.log_label.configure(text="✗ Invalid URL. Make sure you copied the full convene URL.", text_color=RED)
+            self._msg.configure(text="✗  Invalid URL. Copy the full convene URL.", text_color=RED)
 
 
-# ---------------------------------------------------------------------------
-# Convene frame
-# ---------------------------------------------------------------------------
+# ── Convene ───────────────────────────────────────────────────────────────────
 
 class ConveneFrame(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, fg_color=BG, corner_radius=0, **kwargs)
-        self._selected_pools = set(POOL_IDS)
+    def __init__(self, master, **kw):
+        super().__init__(master, fg_color=BG, corner_radius=0, **kw)
+        self._sel = set(POOL_IDS)
         self._build()
 
     def _build(self):
-        heading(self, "Convene History", size=22).pack(anchor="w", padx=32, pady=(32, 4))
-        status_label(self, text="Select banners and fetch your pull history.").pack(anchor="w", padx=32, pady=(0, 20))
+        top = ctk.CTkFrame(self, fg_color="transparent")
+        top.pack(fill="x", padx=32, pady=(32, 0))
+        ctk.CTkLabel(top, text="Convene Records", font=FONT_TITLE, text_color=WHITE).pack(anchor="w")
+        ctk.CTkLabel(top, text="Pull history & pity tracker", font=FONT_SMALL,
+                     text_color=GREY).pack(anchor="w", pady=(2, 0))
+        hdivider(top)
 
-        # Pool selector buttons
-        pool_card = card(self)
-        pool_card.pack(fill="x", padx=32, pady=(0, 12))
-        ctk.CTkLabel(pool_card, text="Banners to fetch", font=("Segoe UI", 12, "bold"),
-                     text_color=SUBTEXT).pack(anchor="w", padx=16, pady=(14, 6))
-
-        self.pool_btns = {}
-        row = ctk.CTkFrame(pool_card, fg_color="transparent")
-        row.pack(padx=12, pady=(0, 14), fill="x")
-        for pool_id, name in POOL_TYPES.items():
-            if pool_id not in POOL_IDS:
-                continue
-            btn = ctk.CTkButton(
-                row, text=name, width=170, height=34,
-                fg_color=ACCENT, hover_color=ACCENT_HOV,
-                font=("Segoe UI", 11), corner_radius=6,
-                command=lambda p=pool_id: self._toggle_pool(p)
+        # Banner toggles
+        brow = ctk.CTkFrame(self, fg_color="transparent")
+        brow.pack(anchor="w", padx=32, pady=(0, 12))
+        self._pool_btns = {}
+        for pid, name in POOL_TYPES.items():
+            if pid not in POOL_IDS: continue
+            b = ctk.CTkButton(
+                brow, text=name, width=175, height=32,
+                fg_color=PANEL2, hover_color="#162438",
+                border_color=GOLD2, border_width=1,
+                text_color=GOLD, font=("Segoe UI", 11), corner_radius=6,
+                command=lambda p=pid: self._toggle(p)
             )
-            btn.pack(side="left", padx=4)
-            self.pool_btns[pool_id] = btn
+            b.pack(side="left", padx=4)
+            self._pool_btns[pid] = b
 
-        # Fetch buttons
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(anchor="w", padx=32, pady=8)
-        self.fetch_btn = primary_btn(btn_row, "⬇  Fetch History", lambda: self._fetch(force=False), width=200)
-        self.fetch_btn.pack(side="left")
-        ghost_btn(btn_row, "↺  Force Refresh", lambda: self._fetch(force=True), width=160).pack(side="left", padx=10)
-        self.fetch_status = status_label(btn_row, text="")
-        self.fetch_status.pack(side="left", padx=8)
+        # Action row
+        arow = ctk.CTkFrame(self, fg_color="transparent")
+        arow.pack(anchor="w", padx=32, pady=(0, 16))
+        self._fbtn = gold_btn(arow, "⬇  Fetch History", lambda: self._fetch(False), w=190)
+        self._fbtn.pack(side="left")
+        ghost_btn(arow, "↺  Force Refresh", lambda: self._fetch(True), w=160).pack(side="left", padx=10)
+        self._fmsg = ctk.CTkLabel(arow, text="", font=FONT_SMALL, text_color=GREY)
+        self._fmsg.pack(side="left", padx=4)
 
-        # Results
-        self.results_frame = ctk.CTkScrollableFrame(self, fg_color=BG, corner_radius=0)
-        self.results_frame.pack(fill="both", expand=True, padx=32, pady=12)
+        self._scroll = ctk.CTkScrollableFrame(self, fg_color=BG, corner_radius=0)
+        self._scroll.pack(fill="both", expand=True, padx=32, pady=0)
 
-    def _toggle_pool(self, pool_id):
-        if pool_id in self._selected_pools:
-            self._selected_pools.discard(pool_id)
-            self.pool_btns[pool_id].configure(fg_color=CARD2, hover_color="#334155")
+    def _toggle(self, pid):
+        if pid in self._sel:
+            self._sel.discard(pid)
+            self._pool_btns[pid].configure(fg_color=PANEL, text_color=GREY, border_color=BORDER)
         else:
-            self._selected_pools.add(pool_id)
-            self.pool_btns[pool_id].configure(fg_color=ACCENT, hover_color=ACCENT_HOV)
+            self._sel.add(pid)
+            self._pool_btns[pid].configure(fg_color=PANEL2, text_color=GOLD, border_color=GOLD2)
 
-    def _fetch(self, force=False):
-        creds = load_cached_credentials()
-        if not creds:
-            messagebox.showwarning("Not Linked", "Link your account first on the Home tab.")
+    def _fetch(self, force):
+        if not load_cached_credentials():
+            messagebox.showwarning("Not Linked", "Link your account on the Home tab first.")
             return
-        if not self._selected_pools:
-            messagebox.showwarning("No Banners", "Select at least one banner to fetch.")
+        if not self._sel:
+            messagebox.showwarning("No Banners", "Enable at least one banner.")
             return
-
-        self.fetch_btn.configure(state="disabled", text="Fetching...")
-        self.fetch_status.configure(text="")
-        for w in self.results_frame.winfo_children():
-            w.destroy()
+        self._fbtn.configure(state="disabled", text="Fetching…")
+        self._fmsg.configure(text="")
+        for w in self._scroll.winfo_children(): w.destroy()
 
         def task():
             try:
-                data, from_cache = fetch_all(creds, list(self._selected_pools), force=force)
-                self.after(0, lambda: self._show_results(data, from_cache))
+                creds = load_cached_credentials()
+                data, cached = fetch_all(creds, list(self._sel), force=force)
+                self.after(0, lambda: self._show(data, cached))
             except Exception as e:
-                self.after(0, lambda: self._fetch_error(str(e)))
+                self.after(0, lambda: self._err(str(e)))
+        run_bg(task)
 
-        run_in_thread(task)
+    def _err(self, msg):
+        self._fbtn.configure(state="normal", text="⬇  Fetch History")
+        self._fmsg.configure(text=f"✗  {msg}", text_color=RED)
 
-    def _fetch_error(self, msg):
-        self.fetch_btn.configure(state="normal", text="⬇  Fetch History")
-        self.fetch_status.configure(text=f"✗ {msg}", text_color=RED)
-
-    def _show_results(self, data, from_cache=False):
-        self.fetch_btn.configure(state="normal", text="⬇  Fetch History")
+    def _show(self, data, cached):
+        self._fbtn.configure(state="normal", text="⬇  Fetch History")
         total = sum(len(v) for v in data.values())
-        source = "cached" if from_cache else "live"
-        self.fetch_status.configure(text=f"✓ {total} records loaded ({source})", text_color=GREEN)
+        src = "cached" if cached else "live"
+        self._fmsg.configure(text=f"✓  {total} records  ({src})", text_color=GREEN)
 
-        for pool_id, records in sorted(data.items()):
-            if not records:
-                continue
-            stats = pity_stats(records)
-            pool_name = POOL_TYPES.get(pool_id, f"Pool {pool_id}")
+        for pid, records in sorted(data.items()):
+            if not records: continue
+            s = pity_stats(records)
+            name = POOL_TYPES.get(pid, f"Pool {pid}")
 
-            section = card(self.results_frame)
-            section.pack(fill="x", pady=8)
+            c = panel(self._scroll)
+            c.pack(fill="x", pady=8)
 
-            # Header row
-            hdr = ctk.CTkFrame(section, fg_color=CARD2, corner_radius=8)
-            hdr.pack(fill="x", padx=12, pady=(12, 8))
+            # Header
+            hdr = ctk.CTkFrame(c, fg_color=PANEL2, corner_radius=8)
+            hdr.pack(fill="x", padx=12, pady=(12, 0))
 
-            ctk.CTkLabel(hdr, text=pool_name, font=("Segoe UI", 13, "bold"),
-                         text_color=TEXT).pack(side="left", padx=16, pady=10)
+            left = ctk.CTkFrame(hdr, fg_color="transparent")
+            left.pack(side="left", padx=16, pady=10)
+            ctk.CTkLabel(left, text=name, font=("Segoe UI", 13, "bold"), text_color=GOLD).pack(anchor="w")
+            ctk.CTkLabel(left, text=f"{s['total_pulls']} total pulls", font=FONT_SMALL, text_color=GREY).pack(anchor="w")
 
-            for label, val, color in [
-                (f"{stats['total_pulls']} pulls", "", TEXT),
-                (f"5★ pity: {stats['current_pity_5']}", "", GOLD),
-                (f"4★ pity: {stats['current_pity_4']}", "", PURPLE),
-                (f"5★ rate: {stats['rate_5star']}%", "", GREEN),
+            right = ctk.CTkFrame(hdr, fg_color="transparent")
+            right.pack(side="right", padx=16, pady=10)
+            for lbl, val, col in [
+                ("5★ pity", s["current_pity_5"], ORANGE),
+                ("4★ pity", s["current_pity_4"], PURPLE),
+                ("5★ rate", f"{s['rate_5star']}%", GREEN),
             ]:
-                ctk.CTkLabel(hdr, text=label, font=("Segoe UI", 11),
-                             text_color=color).pack(side="right", padx=12, pady=10)
+                box = ctk.CTkFrame(right, fg_color="transparent")
+                box.pack(side="left", padx=10)
+                ctk.CTkLabel(box, text=str(val), font=("Segoe UI", 18, "bold"), text_color=col).pack()
+                ctk.CTkLabel(box, text=lbl, font=FONT_LABEL, text_color=GREY).pack()
 
-            # Pull rows (last 30)
+            # Pull rows
+            pulls = ctk.CTkFrame(c, fg_color="transparent")
+            pulls.pack(fill="x", padx=12, pady=(8, 12))
+
+            # Column headers
+            hr = ctk.CTkFrame(pulls, fg_color="transparent")
+            hr.pack(fill="x", pady=(0, 4))
+            for txt, w in [("Rarity", 72), ("Name", 220), ("Type", 110), ("Date", 160)]:
+                ctk.CTkLabel(hr, text=txt, font=FONT_LABEL, text_color=GREY, width=w, anchor="w").pack(side="left")
+
+            ctk.CTkFrame(pulls, height=1, fg_color=BORDER).pack(fill="x", pady=4)
+
             for r in records[:30]:
-                row = ctk.CTkFrame(section, fg_color="transparent")
-                row.pack(fill="x", padx=12, pady=1)
+                row = ctk.CTkFrame(pulls, fg_color="transparent", height=28)
+                row.pack(fill="x")
+                row.pack_propagate(False)
+                sc = STAR5 if r.rarity == 5 else (PURPLE if r.rarity == 4 else "#5B8FD4")
+                ctk.CTkLabel(row, text="★"*r.rarity, font=("Segoe UI", 11, "bold"),
+                             text_color=sc, width=72, anchor="w").pack(side="left")
+                nc = GOLD if r.rarity == 5 else WHITE
+                ctk.CTkLabel(row, text=r.name, font=FONT_BODY, text_color=nc,
+                             width=220, anchor="w").pack(side="left")
+                ctk.CTkLabel(row, text=r.type, font=FONT_SMALL, text_color=GREY,
+                             width=110, anchor="w").pack(side="left")
+                ctk.CTkLabel(row, text=r.pull_time, font=FONT_LABEL, text_color=GREY,
+                             width=160, anchor="w").pack(side="left")
 
-                star_color = GOLD if r.rarity == 5 else (PURPLE if r.rarity == 4 else SUBTEXT)
-                stars = "★" * r.rarity
-
-                ctk.CTkLabel(row, text=stars, font=("Segoe UI", 11),
-                             text_color=star_color, width=60).pack(side="left")
-                ctk.CTkLabel(row, text=r.name, font=("Segoe UI", 12),
-                             text_color=TEXT, width=200, anchor="w").pack(side="left")
-                ctk.CTkLabel(row, text=r.type, font=("Segoe UI", 11),
-                             text_color=SUBTEXT, width=100).pack(side="left")
-                ctk.CTkLabel(row, text=r.pull_time, font=("Segoe UI", 10),
-                             text_color=SUBTEXT).pack(side="left", padx=8)
-
-            ctk.CTkFrame(section, fg_color="transparent", height=8).pack()
-
-
-# ---------------------------------------------------------------------------
-# Echo frame
-# ---------------------------------------------------------------------------
-
-SUBSTAT_OPTIONS = ["— none —"] + VALID_STATS
+            ctk.CTkFrame(c, fg_color="transparent", height=4).pack()
 
 
-class EchoSlotWidget(ctk.CTkFrame):
-    def __init__(self, master, slot, **kwargs):
-        super().__init__(master, fg_color=CARD2, corner_radius=10, **kwargs)
+# ── Echoes ────────────────────────────────────────────────────────────────────
+
+SUB_OPTS = ["— none —"] + VALID_STATS
+GRADE_COLORS = {"S": GREEN, "A": GOLD, "B": ORANGE, "C": GREY, "D": RED}
+
+
+class EchoSlot(ctk.CTkFrame):
+    def __init__(self, master, slot, **kw):
+        super().__init__(master, fg_color=PANEL2, border_color=BORDER,
+                         border_width=1, corner_radius=8, **kw)
         self.slot = slot
         self._build()
 
     def _build(self):
-        ctk.CTkLabel(self, text=f"Echo {self.slot}", font=("Segoe UI", 12, "bold"),
-                     text_color=TEXT).grid(row=0, column=0, columnspan=2, padx=14, pady=(12, 6), sticky="w")
+        hdr = ctk.CTkFrame(self, fg_color=PANEL, corner_radius=6)
+        hdr.pack(fill="x", padx=10, pady=(10, 6))
+        ctk.CTkLabel(hdr, text=f"ECHO {self.slot}", font=FONT_TAG,
+                     text_color=GOLD).pack(side="left", padx=12, pady=6)
 
-        ctk.CTkLabel(self, text="Name", font=("Segoe UI", 10), text_color=SUBTEXT).grid(row=1, column=0, padx=14, sticky="w")
-        self.name_entry = ctk.CTkEntry(self, placeholder_text="e.g. Tempest Mephis", width=220, height=30)
-        self.name_entry.grid(row=1, column=1, padx=(0, 14), pady=2, sticky="w")
+        body = ctk.CTkFrame(self, fg_color="transparent")
+        body.pack(fill="x", padx=10, pady=2)
 
-        ctk.CTkLabel(self, text="Main Stat", font=("Segoe UI", 10), text_color=SUBTEXT).grid(row=2, column=0, padx=14, sticky="w")
-        self.main_var = ctk.StringVar(value=VALID_STATS[0])
-        self.main_menu = ctk.CTkOptionMenu(self, variable=self.main_var,
-                                           values=VALID_STATS, width=220, height=30,
-                                           fg_color=CARD, button_color=ACCENT, button_hover_color=ACCENT_HOV)
-        self.main_menu.grid(row=2, column=1, padx=(0, 14), pady=2, sticky="w")
+        ctk.CTkLabel(body, text="Name", font=FONT_LABEL, text_color=GREY).grid(
+            row=0, column=0, sticky="w", pady=3)
+        self._name = ctk.CTkEntry(body, placeholder_text="e.g. Tempest Mephis",
+                                  width=210, height=28, fg_color=PANEL,
+                                  border_color=BORDER, text_color=WHITE)
+        self._name.grid(row=0, column=1, padx=(8, 0), pady=3, sticky="w")
 
-        ctk.CTkLabel(self, text="Substats", font=("Segoe UI", 10), text_color=SUBTEXT).grid(row=3, column=0, padx=14, pady=(8, 2), sticky="nw")
+        ctk.CTkLabel(body, text="Main stat", font=FONT_LABEL, text_color=GREY).grid(
+            row=1, column=0, sticky="w", pady=3)
+        self._main = ctk.StringVar(value=VALID_STATS[0])
+        ctk.CTkOptionMenu(body, variable=self._main, values=VALID_STATS,
+                          width=210, height=28, fg_color=PANEL, button_color=GOLD2,
+                          button_hover_color=GOLD, text_color=WHITE,
+                          font=FONT_SMALL, corner_radius=6
+                          ).grid(row=1, column=1, padx=(8, 0), pady=3, sticky="w")
 
-        self.sub_vars = []
-        sub_frame = ctk.CTkFrame(self, fg_color="transparent")
-        sub_frame.grid(row=3, column=1, padx=(0, 14), pady=(6, 12), sticky="w")
-        for i in range(5):
+        ctk.CTkLabel(body, text="Substats", font=FONT_LABEL, text_color=GREY).grid(
+            row=2, column=0, sticky="nw", pady=(8, 3))
+        sf = ctk.CTkFrame(body, fg_color="transparent")
+        sf.grid(row=2, column=1, padx=(8, 0), pady=(6, 10), sticky="w")
+        self._subs = []
+        for _ in range(5):
             v = ctk.StringVar(value="— none —")
-            self.sub_vars.append(v)
-            ctk.CTkOptionMenu(sub_frame, variable=v, values=SUBSTAT_OPTIONS,
-                              width=220, height=28,
-                              fg_color=CARD, button_color=ACCENT, button_hover_color=ACCENT_HOV
+            self._subs.append(v)
+            ctk.CTkOptionMenu(sf, variable=v, values=SUB_OPTS,
+                              width=210, height=26, fg_color=PANEL, button_color=GOLD2,
+                              button_hover_color=GOLD, text_color=WHITE,
+                              font=FONT_SMALL, corner_radius=6
                               ).pack(pady=2)
 
-    def get_echo(self) -> Echo:
-        substats = [
-            EchoSubstat(stat=v.get(), value=0.0)
-            for v in self.sub_vars if v.get() != "— none —"
-        ]
-        return Echo(
-            slot=self.slot,
-            name=self.name_entry.get().strip() or f"Echo {self.slot}",
-            main_stat=self.main_var.get(),
-            substats=substats,
-        )
+    def get(self) -> Echo:
+        subs = [EchoSubstat(v.get(), 0.0) for v in self._subs if v.get() != "— none —"]
+        return Echo(self.slot, self._main.get(), subs, self._name.get().strip() or f"Echo {self.slot}")
 
 
 class EchoFrame(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, fg_color=BG, corner_radius=0, **kwargs)
+    def __init__(self, master, **kw):
+        super().__init__(master, fg_color=BG, corner_radius=0, **kw)
         self._build()
 
     def _build(self):
-        heading(self, "Echo Optimizer", size=22).pack(anchor="w", padx=32, pady=(32, 4))
-        status_label(self, text="Select a resonator and enter your echo stats to get a build score.").pack(anchor="w", padx=32, pady=(0, 16))
+        top = ctk.CTkFrame(self, fg_color="transparent")
+        top.pack(fill="x", padx=32, pady=(32, 0))
+        ctk.CTkLabel(top, text="Echo Optimizer", font=FONT_TITLE, text_color=WHITE).pack(anchor="w")
+        ctk.CTkLabel(top, text="Score your build per resonator archetype", font=FONT_SMALL,
+                     text_color=GREY).pack(anchor="w", pady=(2, 0))
+        hdivider(top)
 
         # Resonator picker
-        picker_card = card(self)
-        picker_card.pack(fill="x", padx=32, pady=(0, 12))
-        ctk.CTkLabel(picker_card, text="Resonator", font=("Segoe UI", 12, "bold"),
-                     text_color=SUBTEXT).pack(anchor="w", padx=16, pady=(14, 6))
+        rp = panel(self)
+        rp.pack(fill="x", padx=32, pady=(0, 14))
+        ctk.CTkLabel(rp, text="RESONATOR", font=FONT_TAG, text_color=GOLD).pack(
+            anchor="w", padx=16, pady=(12, 4))
+        self._res = ctk.StringVar(value=sorted(RESONATOR_ARCHETYPES.keys())[0])
+        ctk.CTkOptionMenu(rp, variable=self._res,
+                          values=sorted(RESONATOR_ARCHETYPES.keys()),
+                          width=280, height=34, fg_color=PANEL2,
+                          button_color=GOLD2, button_hover_color=GOLD,
+                          text_color=WHITE, font=("Segoe UI", 13), corner_radius=6
+                          ).pack(anchor="w", padx=16, pady=(0, 12))
 
-        self.resonator_var = ctk.StringVar(value=sorted(RESONATOR_ARCHETYPES.keys())[0])
-        resonator_menu = ctk.CTkOptionMenu(
-            picker_card, variable=self.resonator_var,
-            values=sorted(RESONATOR_ARCHETYPES.keys()), width=240, height=36,
-            fg_color=CARD2, button_color=ACCENT, button_hover_color=ACCENT_HOV,
-            font=("Segoe UI", 12)
-        )
-        resonator_menu.pack(anchor="w", padx=16, pady=(0, 14))
-
-        # Scrollable echo slots + results
         scroll = ctk.CTkScrollableFrame(self, fg_color=BG, corner_radius=0)
-        scroll.pack(fill="both", expand=True, padx=32, pady=8)
+        scroll.pack(fill="both", expand=True, padx=32)
 
-        # Echo slots in 2-column grid
-        slots_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        slots_frame.pack(fill="x")
-        self.slot_widgets = []
+        grid = ctk.CTkFrame(scroll, fg_color="transparent")
+        grid.pack(fill="x")
+        self._slots = []
         for i in range(5):
-            w = EchoSlotWidget(slots_frame, slot=i + 1)
-            w.grid(row=i // 2, column=i % 2, padx=8, pady=8, sticky="nsew")
-            self.slot_widgets.append(w)
-        slots_frame.columnconfigure(0, weight=1)
-        slots_frame.columnconfigure(1, weight=1)
+            s = EchoSlot(grid, i + 1)
+            s.grid(row=i // 2, column=i % 2, padx=8, pady=8, sticky="nsew")
+            self._slots.append(s)
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
 
-        # Score button
-        primary_btn(scroll, "⚡  Score Build", self._score, width=220).pack(pady=16)
+        gold_btn(scroll, "⚡  Score Build", self._score, w=220).pack(pady=16)
 
-        # Results
-        self.results_card = card(scroll)
-        self.results_card.pack(fill="x", pady=8)
-        self.results_label = ctk.CTkLabel(self.results_card, text="Enter your echo stats above and click Score Build.",
-                                          font=("Segoe UI", 12), text_color=SUBTEXT)
-        self.results_label.pack(padx=20, pady=20)
-        self.result_rows_frame = None
+        self._res_panel = panel(scroll)
+        self._res_panel.pack(fill="x", pady=8)
+        ctk.CTkLabel(self._res_panel, text="Enter your echo stats above and click Score Build.",
+                     font=FONT_SMALL, text_color=GREY).pack(padx=20, pady=20)
 
     def _score(self):
-        resonator = self.resonator_var.get()
-        echoes = [w.get_echo() for w in self.slot_widgets]
-        results = score_build(echoes, resonator)
+        res = self._res.get()
+        echoes = [s.get() for s in self._slots]
+        results = score_build(echoes, res)
 
-        # Clear old results
-        for w in self.results_card.winfo_children():
-            w.destroy()
+        for w in self._res_panel.winfo_children(): w.destroy()
 
-        archetype = results[0]["archetype"] if results else "—"
-        heading(self.results_card, f"{resonator}  ·  {archetype}", size=14).pack(anchor="w", padx=16, pady=(14, 8))
-
-        grade_colors = {"S": GREEN, "A": ACCENT, "B": GOLD, "C": "#F97316", "D": RED}
+        arch = results[0]["archetype"] if results else "—"
+        hdr = ctk.CTkFrame(self._res_panel, fg_color=PANEL2, corner_radius=8)
+        hdr.pack(fill="x", padx=12, pady=(12, 8))
+        ctk.CTkLabel(hdr, text=res, font=("Segoe UI", 14, "bold"), text_color=GOLD).pack(side="left", padx=16, pady=10)
+        ctk.CTkLabel(hdr, text=arch.replace("_", " ").upper(), font=FONT_TAG, text_color=GREY).pack(side="left")
 
         total = 0
         for r in results:
-            row = ctk.CTkFrame(self.results_card, fg_color=CARD2, corner_radius=8)
-            row.pack(fill="x", padx=12, pady=4)
+            row = ctk.CTkFrame(self._res_panel, fg_color="transparent")
+            row.pack(fill="x", padx=12, pady=3)
 
-            ctk.CTkLabel(row, text=f"Echo {r['slot']}  {r['name']}",
-                         font=("Segoe UI", 12), text_color=TEXT, width=260, anchor="w").pack(side="left", padx=14, pady=10)
-            ctk.CTkLabel(row, text=r["main_stat"],
-                         font=("Segoe UI", 11), text_color=SUBTEXT, width=130).pack(side="left")
-            ctk.CTkLabel(row, text=f"{r['score']} / 100",
-                         font=("Segoe UI", 12), text_color=TEXT, width=90).pack(side="left")
+            # Score bar background
+            bar_w = 220
+            box = ctk.CTkFrame(row, fg_color=PANEL2, corner_radius=6, width=bar_w + 120)
+            box.pack(fill="x")
+            box.pack_propagate(False)
+
+            left = ctk.CTkFrame(box, fg_color="transparent")
+            left.pack(side="left", padx=12, pady=8)
+            ctk.CTkLabel(left, text=f"Echo {r['slot']}  {r['name']}",
+                         font=FONT_BODY, text_color=WHITE, width=220, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(left, text=r["main_stat"], font=FONT_SMALL, text_color=GREY, anchor="w").pack(anchor="w")
+
+            # Bar
+            bar_frame = ctk.CTkFrame(box, fg_color="transparent")
+            bar_frame.pack(side="left", padx=8)
+            ctk.CTkProgressBar(bar_frame, width=180, height=6,
+                                fg_color=PANEL, progress_color=GOLD,
+                                corner_radius=3
+                                ).pack(pady=2, after=bar_frame.pack_configure(expand=True))
+            # set value
+            pb = bar_frame.winfo_children()
+            if pb: pb[-1].set(r["score"] / 100)
+
+            ctk.CTkLabel(bar_frame, text=f"{r['score']} / 100",
+                         font=FONT_SMALL, text_color=GREY).pack()
+
             g = r["grade"]
-            ctk.CTkLabel(row, text=g, font=("Segoe UI", 14, "bold"),
-                         text_color=grade_colors.get(g, TEXT), width=40).pack(side="left")
+            ctk.CTkLabel(box, text=g, font=("Segoe UI", 20, "bold"),
+                         text_color=GRADE_COLORS.get(g, WHITE), width=48
+                         ).pack(side="right", padx=16)
+
             total += r["score"]
 
         avg = total / len(results) if results else 0
-        overall = grade(avg)
-        summary = ctk.CTkFrame(self.results_card, fg_color="transparent")
-        summary.pack(fill="x", padx=12, pady=(8, 16))
-        ctk.CTkLabel(summary, text=f"Overall  {avg:.1f} / 100",
-                     font=("Segoe UI", 13, "bold"), text_color=TEXT).pack(side="left", padx=14)
-        ctk.CTkLabel(summary, text=f"Grade  {overall}",
-                     font=("Segoe UI", 14, "bold"),
-                     text_color=grade_colors.get(overall, TEXT)).pack(side="left", padx=8)
+        og = grade(avg)
+        foot = ctk.CTkFrame(self._res_panel, fg_color="transparent")
+        foot.pack(fill="x", padx=12, pady=(8, 16))
+        ctk.CTkLabel(foot, text=f"Overall Score", font=FONT_SMALL, text_color=GREY).pack(side="left", padx=12)
+        ctk.CTkLabel(foot, text=f"{avg:.1f} / 100", font=("Segoe UI", 15, "bold"), text_color=ORANGE).pack(side="left")
+        ctk.CTkLabel(foot, text=f"  Grade  {og}", font=("Segoe UI", 15, "bold"),
+                     text_color=GRADE_COLORS.get(og, WHITE)).pack(side="left")
 
 
-# ---------------------------------------------------------------------------
-# Main App
-# ---------------------------------------------------------------------------
+# ── App ───────────────────────────────────────────────────────────────────────
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Wuthering Waves Opti")
-        self.geometry("1100x720")
-        self.minsize(900, 600)
+        self.geometry("1140x740")
+        self.minsize(960, 620)
         self.configure(fg_color=BG)
 
-        self.frames = {
+        self._frames = {
             "Home":    HomeFrame(self),
             "Convene": ConveneFrame(self),
             "Echoes":  EchoFrame(self),
         }
-        for f in self.frames.values():
+        for f in self._frames.values():
             f.pack_forget()
 
-        self.sidebar = Sidebar(self, on_select=self._show_frame)
-        self.sidebar.pack(side="left", fill="y")
+        self._sidebar = Sidebar(self, on_select=self._show)
+        self._sidebar.pack(side="left", fill="y")
 
-        self._show_frame("Home")
+        self._show("Home")
 
-    def _show_frame(self, name):
-        for n, f in self.frames.items():
-            if n == name:
-                f.pack(side="left", fill="both", expand=True)
-            else:
-                f.pack_forget()
+    def _show(self, name):
+        for n, f in self._frames.items():
+            f.pack(side="left", fill="both", expand=True) if n == name else f.pack_forget()
 
 
 if __name__ == "__main__":
-    app = App()
-    app.mainloop()
+    App().mainloop()
