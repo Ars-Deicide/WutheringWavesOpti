@@ -38,15 +38,51 @@ def cli():
 # link — show parsed account credentials
 # ---------------------------------------------------------------------------
 
+HOW_TO_GET_URL = """
+[bold cyan]How to get your Convene URL[/bold cyan]
+
+The convene URL is a temporary link the game generates when you open your
+pull history. It contains your player ID and a session token.
+
+[bold]Method — Fiddler (free, 2 minutes):[/bold]
+
+  1. Download Fiddler Classic from [link]https://www.telerik.com/fiddler[/link]
+  2. Install and open Fiddler
+  3. Go to Tools → Options → HTTPS → tick "Decrypt HTTPS traffic" → OK
+  4. Launch Wuthering Waves and open Convene → Convene Records
+  5. In Fiddler, press Ctrl+F and search for [yellow]aki-gm-resources[/yellow]
+  6. Click the matching request and copy the full URL from the top bar
+  7. Paste it here:
+
+     [bold]python main.py link --url "PASTE_URL_HERE"[/bold]
+"""
+
+
 @cli.command()
-def link():
-    """Show your linked Wuthering Waves account (reads game logs)."""
-    console.print("\n[bold]Searching for Wuthering Waves account...[/bold]")
-    try:
-        creds = load_credentials()
-    except RuntimeError as e:
-        console.print(f"[red]{e}[/red]")
-        sys.exit(1)
+@click.option("--url", default=None, help="Paste your convene URL to link your account.")
+@click.option("--how", is_flag=True, help="Show instructions for getting your convene URL.")
+def link(url, how):
+    """Link your Wuthering Waves account."""
+    if how:
+        console.print(HOW_TO_GET_URL)
+        return
+
+    if url:
+        from wuwa.log_parser import parse_convene_url, save_credentials
+        creds = parse_convene_url(url)
+        if not creds:
+            console.print("[red]Could not parse that URL. Make sure you copied the full convene URL.[/red]")
+            console.print("Run [bold]python main.py link --how[/bold] for instructions.")
+            sys.exit(1)
+        save_credentials(creds)
+        console.print("[green]Account linked and saved![/green]")
+    else:
+        console.print("\n[bold]Searching for Wuthering Waves account...[/bold]")
+        try:
+            creds = load_credentials()
+        except RuntimeError as e:
+            console.print(f"[red]{e}[/red]")
+            sys.exit(1)
 
     panel = Panel(
         f"[green]Player ID:[/green]  {creds['player_id']}\n"
