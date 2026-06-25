@@ -107,12 +107,22 @@ RESONATORS = sorted(RESONATOR_ARCHETYPES.keys())
 class Echoes(commands.Cog):
     def __init__(self, bot): self.bot = bot
 
+    async def resonator_autocomplete(self, interaction: discord.Interaction, current: str):
+        return [
+            app_commands.Choice(name=r, value=r)
+            for r in RESONATORS if current.lower() in r.lower()
+        ][:25]
+
     @app_commands.command(name="echoes", description="Score your echo build for a resonator.")
-    @app_commands.describe(resonator="The resonator whose build you want to score")
-    @app_commands.choices(resonator=[
-        app_commands.Choice(name=r, value=r) for r in RESONATORS
-    ])
+    @app_commands.describe(resonator="Start typing a resonator name")
+    @app_commands.autocomplete(resonator=resonator_autocomplete)
     async def echoes(self, interaction: discord.Interaction, resonator: str):
+        if resonator not in RESONATOR_ARCHETYPES:
+            await interaction.response.send_message(
+                f"Unknown resonator `{resonator}`. Use `/echoes` and pick from the dropdown.",
+                ephemeral=True
+            )
+            return
         await interaction.response.send_modal(EchoModal(resonator))
 
     @app_commands.command(name="stats", description="Show valid stat names for echo input.")

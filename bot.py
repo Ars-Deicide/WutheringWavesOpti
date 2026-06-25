@@ -24,6 +24,7 @@ async def on_ready():
     await bot.load_extension("cogs.account")
     await bot.load_extension("cogs.convene")
     await bot.load_extension("cogs.echoes")
+    await bot.load_extension("cogs.builds")
     synced = await bot.tree.sync()
     print(f"Logged in as {bot.user}  |  {len(synced)} slash commands synced")
 
@@ -58,6 +59,11 @@ async def help_cmd(interaction: discord.Interaction):
     embed.add_field(
         name="/stats",
         value="Show all valid stat names for echo input.",
+        inline=False
+    )
+    embed.add_field(
+        name="/build `resonator`",
+        value="Show the optimal echo sets, main stats, and substat priority for a resonator. Links to Prydwen.gg for the full guide.",
         inline=False
     )
     embed.set_footer(text="Your credentials are stored privately and never shared.")
