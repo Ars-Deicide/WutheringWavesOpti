@@ -26,7 +26,9 @@ async def on_ready():
     await bot.load_extension("cogs.echoes")
     await bot.load_extension("cogs.builds")
     synced = await bot.tree.sync()
-    print(f"Logged in as {bot.user}  |  {len(synced)} slash commands synced")
+    for guild in bot.guilds:
+        await bot.tree.sync(guild=guild)
+    print(f"Logged in as {bot.user}  |  {len(synced)} global commands synced to {len(bot.guilds)} guild(s)")
 
 
 @bot.tree.command(name="help", description="Show all WuWa Opti commands.")
