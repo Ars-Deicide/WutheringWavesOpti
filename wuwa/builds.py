@@ -7,7 +7,7 @@ ALL_RESONATORS = [
     "Aalto", "Aemeath", "Augusta", "Baizhi", "Brant", "Buling",
     "Calcharo", "Camellya", "Cantarella", "Carlotta", "Cartethyia",
     "Changli", "Chisa", "Chixia", "Ciaccona", "Danjin", "Denia",
-    "Encore", "Galbrena", "Iuno", "Jianxin", "Jinhsi", "Jiyan",
+    "Encore", "Galbrena", "Hiyuki", "Iuno", "Jianxin", "Jinhsi", "Jiyan",
     "Lingyang", "Lucilla", "Lucy", "Lumi", "Lupa", "Luuk Herssen",
     "Lynae", "Mornye", "Mortefi", "Phoebe", "Phrolova", "Qiuyuan",
     "Rebecca", "Roccia", "Rover (Aero)", "Rover (Havoc)", "Rover (Spectro)",

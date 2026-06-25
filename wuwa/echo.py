@@ -81,6 +81,7 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     # --- Glacio ---
     "Baizhi":           "support",
     "Carlotta":         "crit_dps",
+    "Hiyuki":           "crit_dps",
     "Lingyang":         "crit_dps",
     "Sanhua":           "crit_dps",
     # --- Havoc ---
