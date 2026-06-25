@@ -50,20 +50,42 @@ def load_cached_credentials() -> dict | None:
     return None
 
 
+def _decrypt_log(raw: bytes) -> str:
+    """
+    Wuthering Waves XOR-obfuscates Client.log per byte:
+      if (byte & 0x0F) % 2 == 1  →  byte ^ 0xA5
+      else                        →  byte ^ 0xEF
+    Credit: originally discovered by @kyuxu, shared by @RabbyDevs (WuWa Tracker).
+    """
+    result = bytearray(len(raw))
+    for i, b in enumerate(raw):
+        result[i] = b ^ (0xA5 if (b & 0x0F) % 2 == 1 else 0xEF)
+    return result.decode("utf-8", errors="replace")
+
+
 def extract_from_logs() -> dict | None:
-    """Try to find the convene URL in game log files (multiple encodings)."""
+    """Find the convene URL in game log files, decrypting XOR encoding if needed."""
     for log_path in LOG_PATHS:
         if not log_path.exists():
             continue
         raw = log_path.read_bytes()
-        for encoding in ("utf-8", "utf-16-le", "utf-16-be", "latin-1"):
+
+        # Try plain text first, then XOR-decrypted
+        candidates = []
+        for encoding in ("utf-8", "utf-16-le", "latin-1"):
             try:
-                text = raw.decode(encoding, errors="replace")
-                matches = CONVENE_URL_PATTERN.findall(text)
-                if matches:
-                    return parse_convene_url(matches[-1])
+                candidates.append(raw.decode(encoding, errors="replace"))
             except Exception:
-                continue
+                pass
+        try:
+            candidates.append(_decrypt_log(raw))
+        except Exception:
+            pass
+
+        for text in candidates:
+            matches = CONVENE_URL_PATTERN.findall(text)
+            if matches:
+                return parse_convene_url(matches[-1])
     return None
 
 
