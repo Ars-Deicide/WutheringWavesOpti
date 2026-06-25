@@ -96,6 +96,28 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Rover (Spectro)":  "crit_dps",
     "The Shorekeeper":  "support",
     "Verina":           "support",
+    # --- Additional released resonators ---
+    "Aemeath":          "crit_dps",
+    "Augusta":          "support",
+    "Buling":           "atk_dps",
+    "Cartethyia":       "crit_dps",
+    "Chisa":            "crit_dps",
+    "Ciaccona":         "support",
+    "Denia":            "crit_dps",
+    "Galbrena":         "support",
+    "Iuno":             "support",
+    "Lucilla":          "crit_dps",
+    "Lucy":             "support",
+    "Lumi":             "support",
+    "Lupa":             "crit_dps",
+    "Luuk Herssen":     "crit_dps",
+    "Lynae":            "support",
+    "Mornye":           "crit_dps",
+    "Phrolova":         "crit_dps",
+    "Qiuyuan":          "support",
+    "Rebecca":          "crit_dps",
+    "Rover (Aero)":     "atk_dps",
+    "Sigrika":          "tank",
 }
 
 VALID_STATS = list(ARCHETYPES["crit_dps"].keys())

@@ -4,11 +4,15 @@ Used by /build command. Update this file as the meta shifts.
 """
 
 ALL_RESONATORS = [
-    "Aalto", "Baizhi", "Brant", "Calcharo", "Camellya", "Cantarella",
-    "Carlotta", "Changli", "Chixia", "Danjin", "Encore", "Jianxin",
-    "Jinhsi", "Jiyan", "Lingyang", "Mortefi", "Phoebe", "Roccia",
-    "Rover (Havoc)", "Rover (Spectro)", "Sanhua", "Taoqi",
-    "The Shorekeeper", "Verina", "Xiangli Yao", "Yangyang", "Yuanwu", "Zani",
+    "Aalto", "Aemeath", "Augusta", "Baizhi", "Brant", "Buling",
+    "Calcharo", "Camellya", "Cantarella", "Carlotta", "Cartethyia",
+    "Changli", "Chisa", "Chixia", "Ciaccona", "Danjin", "Denia",
+    "Encore", "Galbrena", "Iuno", "Jianxin", "Jinhsi", "Jiyan",
+    "Lingyang", "Lucilla", "Lucy", "Lumi", "Lupa", "Luuk Herssen",
+    "Lynae", "Mornye", "Mortefi", "Phoebe", "Phrolova", "Qiuyuan",
+    "Rebecca", "Roccia", "Rover (Aero)", "Rover (Havoc)", "Rover (Spectro)",
+    "Sanhua", "Sigrika", "Taoqi", "The Shorekeeper", "Verina",
+    "Xiangli Yao", "Yangyang", "Yuanwu", "Zani",
 ]
 
 # slug used in prydwen URLs (lowercase, spaces→hyphens, parens stripped)
