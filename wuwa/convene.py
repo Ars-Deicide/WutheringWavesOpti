@@ -6,10 +6,15 @@ identical to what the game itself requests — no scraping or reverse
 engineering involved.
 """
 
+import json
 import time
+from pathlib import Path
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+
+CACHE_FILE = Path(__file__).parent.parent / ".convene_cache.json"
+CACHE_TTL  = 300  # seconds before re-fetching from API
 
 # Kuro's official gacha query endpoints
 API_ENDPOINTS = {
@@ -89,16 +94,62 @@ def fetch_pool(creds: dict, pool_type: int, page_size: int = 20) -> list[Convene
     return records
 
 
-def fetch_all(creds: dict, pools: list[int] | None = None) -> dict[int, list[ConveneRecord]]:
-    """Fetch records for all pool types in parallel."""
+def _load_cache() -> dict | None:
+    try:
+        if not CACHE_FILE.exists():
+            return None
+        data = json.loads(CACHE_FILE.read_text())
+        if time.time() - data.get("ts", 0) > CACHE_TTL:
+            return None
+        return data
+    except Exception:
+        return None
+
+
+def _save_cache(results: dict[int, list[ConveneRecord]]) -> None:
+    try:
+        serializable = {
+            "ts": time.time(),
+            "pools": {
+                str(pool_id): [asdict(r) for r in records]
+                for pool_id, records in results.items()
+            }
+        }
+        CACHE_FILE.write_text(json.dumps(serializable))
+    except Exception:
+        pass
+
+
+def _from_cache(data: dict) -> dict[int, list[ConveneRecord]]:
+    return {
+        int(pool_id): [ConveneRecord(**r) for r in records]
+        for pool_id, records in data["pools"].items()
+    }
+
+
+def fetch_all(creds: dict, pools: list[int] | None = None, force: bool = False) -> tuple[dict[int, list[ConveneRecord]], bool]:
+    """
+    Fetch records for all pool types in parallel.
+    Returns (results, from_cache). Uses cache unless force=True or cache is stale.
+    """
     pools = pools or list(POOL_TYPES.keys())
+
+    if not force:
+        cached = _load_cache()
+        if cached:
+            all_present = all(str(p) in cached["pools"] for p in pools)
+            if all_present:
+                return _from_cache(cached), True
+
     results: dict[int, list[ConveneRecord]] = {}
     with ThreadPoolExecutor(max_workers=len(pools)) as executor:
         futures = {executor.submit(fetch_pool, creds, p): p for p in pools}
         for future in as_completed(futures):
             pool_type = futures[future]
             results[pool_type] = future.result()
-    return results
+
+    _save_cache(results)
+    return results, False
 
 
 def pity_stats(records: list[ConveneRecord]) -> dict:

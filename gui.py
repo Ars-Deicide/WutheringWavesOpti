@@ -226,13 +226,14 @@ class ConveneFrame(ctk.CTkFrame):
             btn.pack(side="left", padx=4)
             self.pool_btns[pool_id] = btn
 
-        # Fetch button
+        # Fetch buttons
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(anchor="w", padx=32, pady=8)
-        self.fetch_btn = primary_btn(btn_row, "⬇  Fetch History", self._fetch, width=200)
+        self.fetch_btn = primary_btn(btn_row, "⬇  Fetch History", lambda: self._fetch(force=False), width=200)
         self.fetch_btn.pack(side="left")
+        ghost_btn(btn_row, "↺  Force Refresh", lambda: self._fetch(force=True), width=160).pack(side="left", padx=10)
         self.fetch_status = status_label(btn_row, text="")
-        self.fetch_status.pack(side="left", padx=16)
+        self.fetch_status.pack(side="left", padx=8)
 
         # Results
         self.results_frame = ctk.CTkScrollableFrame(self, fg_color=BG, corner_radius=0)
@@ -246,7 +247,7 @@ class ConveneFrame(ctk.CTkFrame):
             self._selected_pools.add(pool_id)
             self.pool_btns[pool_id].configure(fg_color=ACCENT, hover_color=ACCENT_HOV)
 
-    def _fetch(self):
+    def _fetch(self, force=False):
         creds = load_cached_credentials()
         if not creds:
             messagebox.showwarning("Not Linked", "Link your account first on the Home tab.")
@@ -262,8 +263,8 @@ class ConveneFrame(ctk.CTkFrame):
 
         def task():
             try:
-                data = fetch_all(creds, list(self._selected_pools))
-                self.after(0, lambda: self._show_results(data))
+                data, from_cache = fetch_all(creds, list(self._selected_pools), force=force)
+                self.after(0, lambda: self._show_results(data, from_cache))
             except Exception as e:
                 self.after(0, lambda: self._fetch_error(str(e)))
 
@@ -273,10 +274,11 @@ class ConveneFrame(ctk.CTkFrame):
         self.fetch_btn.configure(state="normal", text="⬇  Fetch History")
         self.fetch_status.configure(text=f"✗ {msg}", text_color=RED)
 
-    def _show_results(self, data):
+    def _show_results(self, data, from_cache=False):
         self.fetch_btn.configure(state="normal", text="⬇  Fetch History")
         total = sum(len(v) for v in data.values())
-        self.fetch_status.configure(text=f"✓ {total} records loaded", text_color=GREEN)
+        source = "cached" if from_cache else "live"
+        self.fetch_status.configure(text=f"✓ {total} records loaded ({source})", text_color=GREEN)
 
         for pool_id, records in sorted(data.items()):
             if not records:
