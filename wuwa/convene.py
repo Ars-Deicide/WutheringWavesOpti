@@ -8,6 +8,7 @@ engineering involved.
 
 import time
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
 # Kuro's official gacha query endpoints
@@ -80,7 +81,7 @@ def fetch_pool(creds: dict, pool_type: int, page_size: int = 20) -> list[Convene
             ))
 
         last_id = items[-1].get("id", "0")
-        time.sleep(0.3)  # be gentle with Kuro's servers
+        time.sleep(0.05)
 
         if len(items) < page_size:
             break
@@ -89,11 +90,14 @@ def fetch_pool(creds: dict, pool_type: int, page_size: int = 20) -> list[Convene
 
 
 def fetch_all(creds: dict, pools: list[int] | None = None) -> dict[int, list[ConveneRecord]]:
-    """Fetch records for the given pool types (default: all named pools)."""
+    """Fetch records for all pool types in parallel."""
     pools = pools or list(POOL_TYPES.keys())
     results: dict[int, list[ConveneRecord]] = {}
-    for pool_type in pools:
-        results[pool_type] = fetch_pool(creds, pool_type)
+    with ThreadPoolExecutor(max_workers=len(pools)) as executor:
+        futures = {executor.submit(fetch_pool, creds, p): p for p in pools}
+        for future in as_completed(futures):
+            pool_type = futures[future]
+            results[pool_type] = future.result()
     return results
 
 
