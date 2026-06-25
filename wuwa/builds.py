@@ -464,6 +464,22 @@ BUILDS: dict[str, dict] = {
         "notes": "Shield and pull utility. Prioritise HP% for stronger shields.",
         "patch": "1.0",
     },
+    "Lucilla": {
+        "role": "Main DPS / Support",
+        "element": "Glacio",
+        "weapon": "Luminous Hymn",
+        "echo_sets": ["Reel of Spliced Memories (5pc)", "Reel of Spliced Memories (3pc) + Moonlit Clouds (2pc)"],
+        "echo_mains": {
+            "4-cost": "CRIT Rate / CRIT DMG",
+            "3-cost": "Glacio DMG%",
+            "3-cost-alt": "Glacio DMG%",
+            "1-cost": "ATK%",
+            "1-cost-2": "ATK%",
+        },
+        "substats": ["CRIT Rate", "CRIT DMG", "ATK%", "Flat ATK"],
+        "notes": "5pc Reel of Spliced Memories gives 20% CRIT Rate and 35% Echo Skill DMG Bonus. In Echo mode prioritise ATK over Basic DMG%.",
+        "patch": "3.x",
+    },
 }
 
 
