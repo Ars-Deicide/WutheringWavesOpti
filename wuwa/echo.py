@@ -60,7 +60,7 @@ ARCHETYPES: dict[str, dict[str, float]] = {
     },
 }
 
-# Resonator → archetype mapping — WW 3.4 (June 2026)
+# Resonator → archetype mapping
 RESONATOR_ARCHETYPES: dict[str, str] = {
     # --- Aero ---
     "Aalto":            "atk_dps",
@@ -69,7 +69,6 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Yangyang":         "support",
     # --- Electro ---
     "Calcharo":         "crit_dps",
-    "Mortefi":          "crit_dps",
     "Mortefi":          "crit_dps",
     "Xiangli Yao":      "crit_dps",
     "Yuanwu":           "support",
@@ -82,7 +81,6 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     # --- Glacio ---
     "Baizhi":           "support",
     "Carlotta":         "crit_dps",
-    "Hiyuki":           "crit_dps",
     "Lingyang":         "crit_dps",
     "Sanhua":           "crit_dps",
     # --- Havoc ---
@@ -98,33 +96,6 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Rover (Spectro)":  "crit_dps",
     "The Shorekeeper":  "support",
     "Verina":           "support",
-    # --- Newer / 3.x releases ---
-    "Aemeath":          "crit_dps",
-    "Augusta":          "support",
-    "Buling":           "atk_dps",
-    "Cartethyia":       "crit_dps",
-    "Chisa":            "crit_dps",
-    "Ciaccona":         "support",
-    "Denia":            "crit_dps",
-    "Galbrena":         "support",
-    "Hsin":             "crit_dps",
-    "Iuno":             "support",
-    "Jingran":          "atk_dps",
-    "Lucilla":          "crit_dps",
-    "Lucy":             "support",
-    "Lumi":             "support",
-    "Lupa":             "crit_dps",
-    "Luuk Herssen":     "crit_dps",
-    "Lynae":            "support",
-    "Mornye":           "crit_dps",
-    "Phrolova":         "crit_dps",
-    "Qingxiao":         "crit_dps",
-    "Qiuyuan":          "support",
-    "Rebecca":          "crit_dps",
-    "Rover (Aero)":     "atk_dps",
-    "Sigrika":          "tank",
-    "Suisui":           "support",
-    "Suoming":          "atk_dps",
 }
 
 VALID_STATS = list(ARCHETYPES["crit_dps"].keys())
