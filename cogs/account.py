@@ -22,11 +22,15 @@ class Account(commands.Cog):
                     description=(
                         "Could not parse that URL.\n\n"
                         "**How to get your convene URL:**\n"
-                        "1. Open Wuthering Waves\n"
-                        "2. Go to **Convene → Convene Records**\n"
-                        "3. Log into **wutheringwaves.kurogames.com** in your browser\n"
-                        "4. Open Convene Records there, press **F12 → Network**\n"
-                        "5. Filter by `query` and copy the request URL"
+                        "1. Open Wuthering Waves → **Convene → Convene History**\n"
+                        "2. Click into **Convene History** so the records webview loads\n"
+                        "3. Copy the **webview URL** — it contains `#/record?` followed by "
+                        "`player_id`, `record_id`, and `svr_id`.\n\n"
+                        "On PC this URL is written to the game's log file when you open "
+                        "Convene History (that's what `python main.py link` reads "
+                        "automatically). The URL ends in `…/aki/gacha/index.html#/record?…`.\n"
+                        "⚠️ Don't paste the `…/gacha/record/query` request URL — that's the "
+                        "API endpoint and doesn't contain your credentials."
                     ),
                     color=0xD94040
                 ),
