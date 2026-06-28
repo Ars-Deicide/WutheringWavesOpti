@@ -57,6 +57,11 @@ async def help_cmd(interaction: discord.Interaction):
         inline=False
     )
     embed.add_field(
+        name="/autolink",
+        value="Auto-link by reading your convene URL straight from the local game log (same PC only).",
+        inline=False
+    )
+    embed.add_field(
         name="/unlink",
         value="Remove your linked account.",
         inline=False

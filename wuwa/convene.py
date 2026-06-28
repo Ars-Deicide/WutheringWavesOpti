@@ -35,6 +35,37 @@ POOL_TYPES = {
 
 RARITY_COLOR = {5: "gold", 4: "purple", 3: "blue"}
 
+# ---------------------------------------------------------------------------
+# Time-limited collaboration banners
+# ---------------------------------------------------------------------------
+# Collab banners should only be selectable while the event is live. Populate
+# COLLAB_POOLS with the real Kuro cardPoolType IDs + display names; they auto-
+# hide once time.time() passes COLLAB_ENDS_AT. Leave COLLAB_POOLS empty to show
+# only the standard banners.
+COLLAB_ENDS_AT = 1783591555  # 2026-07-09 ~11:05 (10d 11h from 2026-06-29 setup)
+COLLAB_POOLS: dict[int, str] = {
+    # NOTE: pool IDs (8–11) are assumed sequential — display/gating works
+    # regardless, but fetching needs Kuro's real cardPoolType numbers. Update
+    # these if Fetch returns empty for a collab banner.
+    8:  "Dreaming Upon the Moon",
+    9:  "Rekindled Embers of Rage",
+    10: "Absolute Pulsation - Spectral Trigger",
+    11: "Absolute Pulsation - Skull Thrasher",
+}
+
+
+def collab_active() -> bool:
+    """True only while the collaboration event is live AND banners are configured."""
+    return bool(COLLAB_POOLS) and time.time() < COLLAB_ENDS_AT
+
+
+def available_pools() -> dict[int, str]:
+    """Standard banners, plus collab banners only while the event is live."""
+    pools = dict(POOL_TYPES)
+    if collab_active():
+        pools.update(COLLAB_POOLS)
+    return pools
+
 
 @dataclass
 class ConveneRecord:

@@ -3,18 +3,29 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from wuwa.convene import fetch_all, pity_stats, POOL_TYPES
+from wuwa.convene import (
+    fetch_all, pity_stats, POOL_TYPES, COLLAB_POOLS, collab_active, available_pools,
+)
 from wuwa.store import get_creds, get_cache, set_cache, load_cache_results
 
-POOL_IDS = [1, 2, 3, 4]
+BASE_POOL_IDS = [1, 2, 3, 4]
 STAR5 = 0xFFD700
 STAR4 = 0xB966E7
 GOLD  = 0xEAB820
 
 
+def _selectable_pools() -> dict[int, str]:
+    """Banners shown as toggles: the 4 standard banners, plus collab banners
+    while the collaboration event is live."""
+    pools = {pid: POOL_TYPES[pid] for pid in BASE_POOL_IDS}
+    if collab_active():
+        pools.update(COLLAB_POOLS)
+    return pools
+
+
 def _pool_embed(pool_id: int, records: list) -> discord.Embed:
     s = pity_stats(records)
-    name = POOL_TYPES.get(pool_id, f"Pool {pool_id}")
+    name = available_pools().get(pool_id, f"Pool {pool_id}")
 
     embed = discord.Embed(title=f"✦ {name}", color=GOLD)
     embed.add_field(name="Total Pulls",  value=str(s["total_pulls"]),    inline=True)
@@ -24,9 +35,22 @@ def _pool_embed(pool_id: int, records: list) -> discord.Embed:
     embed.add_field(name="5★ Rate",      value=f"{s['rate_5star']}%",    inline=True)
     embed.add_field(name="​",       value="​",                  inline=True)
 
+    # Pity = how many pulls it took to land each 5★ (pulls since the previous
+    # 5★, inclusive of the winning pull). records is newest-first, so walk
+    # oldest→newest, counting the streak and resetting it on each 5★.
+    pity_at: dict[int, int] = {}
+    streak = 0
+    for r in reversed(records):
+        streak += 1
+        if r.rarity == 5:
+            pity_at[id(r)] = streak
+            streak = 0
+
     recent_5 = [r for r in records if r.rarity == 5][:5]
     if recent_5:
-        lines = "\n".join(f"★★★★★ **{r.name}** — pull #{r.pull_number}" for r in recent_5)
+        lines = "\n".join(
+            f"★★★★★ **{r.name}** — pity {pity_at.get(id(r), '?')}" for r in recent_5
+        )
         embed.add_field(name="Recent 5★", value=lines, inline=False)
 
     recent = records[:15]
@@ -45,17 +69,18 @@ class ConvenePoolView(discord.ui.View):
         super().__init__(timeout=120)
         self.creds   = creds
         self.user_id = user_id
-        self.selected: set[int] = {1, 2, 3, 4}
+        self.pools   = _selectable_pools()
+        self.selected: set[int] = set(self.pools)
         self._add_buttons()
 
     def _add_buttons(self):
         self.clear_items()
-        for pid, name in POOL_TYPES.items():
-            if pid not in POOL_IDS: continue
+        for i, (pid, name) in enumerate(self.pools.items()):
             active = pid in self.selected
-            self.add_item(PoolToggle(pid, name, active))
-        self.add_item(FetchButton())
-        self.add_item(RefreshButton())
+            self.add_item(PoolToggle(pid, name, active, row=i // 5))
+        action_row = (len(self.pools) - 1) // 5 + 1
+        self.add_item(FetchButton(row=action_row))
+        self.add_item(RefreshButton(row=action_row))
 
     def toggle(self, pid: int):
         if pid in self.selected: self.selected.discard(pid)
@@ -64,12 +89,12 @@ class ConvenePoolView(discord.ui.View):
 
 
 class PoolToggle(discord.ui.Button):
-    def __init__(self, pid: int, name: str, active: bool):
+    def __init__(self, pid: int, name: str, active: bool, row: int = 0):
         super().__init__(
             label=name,
             style=discord.ButtonStyle.primary if active else discord.ButtonStyle.secondary,
             custom_id=f"pool_{pid}",
-            row=0 if pid <= 2 else 1
+            row=row,
         )
         self.pid = pid
 
@@ -79,8 +104,8 @@ class PoolToggle(discord.ui.Button):
 
 
 class FetchButton(discord.ui.Button):
-    def __init__(self):
-        super().__init__(label="⬇  Fetch History", style=discord.ButtonStyle.success, row=2)
+    def __init__(self, row: int = 2):
+        super().__init__(label="⬇  Fetch History", style=discord.ButtonStyle.success, row=row)
 
     async def callback(self, interaction: discord.Interaction):
         if not self.view.selected:
@@ -114,8 +139,8 @@ class FetchButton(discord.ui.Button):
 
 
 class RefreshButton(discord.ui.Button):
-    def __init__(self):
-        super().__init__(label="↺  Force Refresh", style=discord.ButtonStyle.secondary, row=2)
+    def __init__(self, row: int = 2):
+        super().__init__(label="↺  Force Refresh", style=discord.ButtonStyle.secondary, row=row)
 
     async def callback(self, interaction: discord.Interaction):
         if not self.view.selected:

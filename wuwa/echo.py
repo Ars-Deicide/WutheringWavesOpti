@@ -58,6 +58,17 @@ ARCHETYPES: dict[str, dict[str, float]] = {
         "CRIT DMG":         0.1,
         "Flat ATK":         0.02,
     },
+    "hp_dps": {
+        "HP%":              1.0,
+        "CRIT Rate":        0.9,
+        "CRIT DMG":         0.9,
+        "Flat HP":          0.4,
+        "Energy Regen":     0.3,
+        "ATK%":             0.1,
+        "Flat ATK":         0.02,
+        "DEF%":             0.05,
+        "Flat DEF":         0.02,
+    },
 }
 
 # Resonator → archetype mapping
@@ -72,7 +83,6 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Mortefi":          "crit_dps",
     "Xiangli Yao":      "crit_dps",
     "Yuanwu":           "support",
-    "Zani":             "support",
     # --- Fusion ---
     "Brant":            "atk_dps",
     "Changli":          "crit_dps",
@@ -97,11 +107,12 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Rover (Spectro)":  "crit_dps",
     "The Shorekeeper":  "support",
     "Verina":           "support",
+    "Zani":             "crit_dps",  # Spectro Frazzle DPS (not a support)
     # --- Additional released resonators ---
     "Aemeath":          "crit_dps",
     "Augusta":          "support",
-    "Buling":           "atk_dps",
-    "Cartethyia":       "crit_dps",
+    "Buling":           "support",
+    "Cartethyia":       "hp_dps",
     "Chisa":            "crit_dps",
     "Ciaccona":         "support",
     "Denia":            "crit_dps",
@@ -119,6 +130,9 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     "Rebecca":          "crit_dps",
     "Rover (Aero)":     "atk_dps",
     "Sigrika":          "tank",
+    "Yinlin":           "crit_dps",
+    "Youhu":            "support",
+    "Zhezhi":           "crit_dps",
 }
 
 VALID_STATS = list(ARCHETYPES["crit_dps"].keys())
@@ -187,6 +201,62 @@ def score_build(echoes: list[Echo], resonator: str) -> list[dict]:
             "archetype": archetype,
         })
     return results
+
+
+# Echo slot → cost mapping (WuWa: slot 1 = 4-cost main, 2–3 = 3-cost, 4–5 = 1-cost)
+SLOT_COST = {1: "4-cost", 2: "3-cost", 3: "3-cost", 4: "1-cost", 5: "1-cost"}
+
+
+def build_suggestions(echoes: list[Echo], resonator: str) -> list[str]:
+    """Actionable optimization tips, comparing the user's echoes against the
+    curated build (recommended main stat per slot + substat priority). Falls
+    back to archetype weights when no curated build exists."""
+    from wuwa.builds import get_build  # local import avoids a circular dependency
+
+    archetype = RESONATOR_ARCHETYPES.get(resonator, "crit_dps")
+    weights   = ARCHETYPES.get(archetype, ARCHETYPES["crit_dps"])
+    build     = get_build(resonator)
+
+    tips: list[str] = []
+    if not build:
+        tips.append(
+            f"No curated build for **{resonator}** yet — scored on the *{archetype.replace('_', ' ')}* "
+            "archetype only. Main-stat advice unavailable until build data is added."
+        )
+    mains    = (build or {}).get("echo_mains", {})
+    priority = (build or {}).get("substats", [])
+
+    for echo in echoes:
+        cost = SLOT_COST.get(echo.slot)
+        # Recommended main stat(s) for this slot's cost
+        if cost == "3-cost":
+            acceptable = {m for m in (mains.get("3-cost"), mains.get("3-cost-alt")) if m}
+        elif cost:
+            acceptable = {mains.get(cost)} - {None}
+        else:
+            acceptable = set()
+
+        if acceptable and echo.main_stat not in acceptable:
+            tips.append(
+                f"Echo {echo.slot} ({cost}): main stat is **{echo.main_stat}** → "
+                f"recommended **{' or '.join(sorted(acceptable))}**."
+            )
+
+        # Flag low-value substats for this archetype
+        low = [s.stat for s in echo.substats if weights.get(s.stat, 0) < 0.3]
+        if low:
+            tips.append(f"Echo {echo.slot}: low-value substat(s) for {resonator} — {', '.join(low)}.")
+
+        # Nudge toward top-priority substats that are missing
+        if priority:
+            have        = {s.stat for s in echo.substats}
+            missing_top = [s for s in priority[:2] if s not in have]
+            if missing_top:
+                tips.append(f"Echo {echo.slot}: roll toward {', '.join(missing_top)} (top priority).")
+
+    if not tips:
+        tips.append("✅ Main stats and substats all align with the recommended build — looking sharp.")
+    return tips
 
 
 def prompt_echo(slot: int) -> Echo:

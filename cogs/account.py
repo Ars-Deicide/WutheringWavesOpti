@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from wuwa.log_parser import parse_convene_url
+from wuwa.log_parser import parse_convene_url, extract_from_logs
 from wuwa.store import get_creds, set_creds
 
 
@@ -48,6 +48,36 @@ class Account(commands.Cog):
         embed.add_field(name="Region",    value=creds["svr_area"].upper(), inline=True)
         embed.add_field(name="Language",  value=creds["lang"].upper(), inline=True)
         embed.set_footer(text="Your credentials are saved privately. Use /convene to fetch your history.")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="autolink", description="Auto-link by reading your convene URL from the local game log.")
+    async def autolink(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        creds = extract_from_logs()
+        if not creds:
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="❌ Couldn't find your convene URL",
+                    description=(
+                        "I couldn't read a convene URL from the local Wuthering Waves logs.\n\n"
+                        "**Fix:** open the game → **Convene → Convene History** once (this writes "
+                        "the URL to the log), then run `/autolink` again.\n\n"
+                        "⚠️ This only works when the bot runs on the **same PC as the game**. "
+                        "Otherwise use `/link` and paste your URL manually."
+                    ),
+                    color=0xD94040,
+                ),
+                ephemeral=True,
+            )
+            return
+
+        set_creds(interaction.user.id, creds)
+        embed = discord.Embed(title="✅ Account Auto-Linked", color=0xEAB820)
+        embed.add_field(name="Player ID", value=creds["player_id"], inline=True)
+        embed.add_field(name="Region",    value=creds.get("svr_area", "?").upper(), inline=True)
+        embed.add_field(name="Language",  value=creds.get("lang", "?").upper(), inline=True)
+        embed.set_footer(text="Read from your local game log. Use /convene to fetch history.")
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="unlink", description="Remove your linked Wuthering Waves account.")
