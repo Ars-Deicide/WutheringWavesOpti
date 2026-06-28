@@ -608,7 +608,7 @@ BUILDS: dict[str, dict] = {
         "patch": "1.2",
     },
     "Lupa": {
-        "role": "Main DPS / Support",
+        "role": "Sub-DPS / Support",
         "element": "Fusion",
         "weapon": "Wildfire Mark",
         "echo_sets": ["Flaming Clawprint (5pc)"],

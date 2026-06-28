@@ -8,6 +8,14 @@ GOLD        = 0xEAB820
 GRADE_COLOR = {"S": 0x3EC98A, "A": 0xEAB820, "B": 0xFF8C1A, "C": 0x7A8A9E, "D": 0xD94040}
 VALID_SET   = set(VALID_STATS)
 
+# Display names for the stat-scaling buckets. This is the *scoring profile*
+# (how substats are weighted), NOT a battlefield role — a sub-DPS can still
+# scale on crit and sit in "Crit DPS".
+SCALING_LABELS = {
+    "crit_dps": "Crit DPS", "atk_dps": "ATK DPS", "support": "Support",
+    "tank": "Tank", "hp_dps": "HP DPS", "def_support": "DEF Support",
+}
+
 
 def _parse_echo_field(slot: int, text: str) -> Echo | str:
     """
@@ -78,11 +86,12 @@ class EchoModal(discord.ui.Modal, title="Echo Build Input"):
         results = score_build(echoes, self.resonator)
         avg     = sum(r["score"] for r in results) / len(results) if results else 0
         og      = grade(avg)
-        arch    = results[0]["archetype"].replace("_", " ").title() if results else "—"
+        raw_arch = results[0]["archetype"] if results else ""
+        arch     = SCALING_LABELS.get(raw_arch, raw_arch.replace("_", " ").title() or "—")
 
         embed = discord.Embed(
             title=f"◈ Echo Build — {self.resonator}",
-            description=f"Archetype: **{arch}**",
+            description=f"Scaling profile: **{arch}**  *(how substats are weighted, not role)*",
             color=GRADE_COLOR.get(og, GOLD)
         )
 
@@ -104,7 +113,7 @@ class EchoModal(discord.ui.Modal, title="Echo Build Input"):
             value="\n".join(f"• {t}" for t in tips)[:1024],
             inline=False
         )
-        embed.set_footer(text=f"Stat weights tuned for {arch} · Higher = better substat value")
+        embed.set_footer(text=f"Substats weighted for {arch} scaling · Higher = better")
         await interaction.response.send_message(embed=embed)
 
 
