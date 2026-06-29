@@ -1,0 +1,17 @@
+[Unit]
+Description=WutheringWavesOpti Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust User and WorkingDirectory to your install location.
+User=botuser
+WorkingDirectory=/opt/WutheringWavesOpti
+EnvironmentFile=/opt/WutheringWavesOpti/.env
+ExecStart=/opt/WutheringWavesOpti/.venv/bin/python bot.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

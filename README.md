@@ -53,6 +53,57 @@ Walks you through entering each echo's main stat and substats, then prints a per
 
 Supported resonators: Jiyan, Calcharo, Carlotta, Changli, Camellya, Jinhsi, Encore, Danjin, Sanhua, Xiangli Yao, Verina, Shorekeeper, Baizhi, Yangyang, Rover, and more.
 
+## Discord bot
+
+The same features are available as a Discord bot (`bot.py`) via slash commands:
+`/link`, `/unlink`, `/convene`, `/echoes`, `/stats`, `/build`, and `/help`.
+
+`/build <resonator>` shows the full build sheet — echo sets, main echo, main
+stats, substat & skill (Forte) priority, and the total materials + Shell Credits
+for a Lv.90 / all-skills build.
+
+### Configuration
+
+Copy `.env.example` to `.env` and add your bot token (Discord Developer Portal →
+your app → Bot → Reset Token). `.env` is gitignored — never commit it.
+
+```bash
+cp .env.example .env
+# edit .env and set DISCORD_TOKEN=...
+```
+
+Optional: set `WUWA_IMAGE_BASE` to a folder/CDN of transparent character PNGs
+named by slug (e.g. `jiyan.png`, `rover-havoc.png`) to show portraits in `/build`.
+
+### Run locally
+
+```bash
+pip install -r requirements.txt
+python bot.py
+```
+
+The first launch syncs the slash commands with Discord.
+
+### Deploy (persistent)
+
+**Docker Compose** (recommended — auto-restarts, persists data to `./data`):
+
+```bash
+docker compose up -d --build      # start
+docker compose logs -f            # tail logs
+docker compose down               # stop
+```
+
+**systemd** (bare-metal/VPS): a sample unit is in
+[`deploy/wutheringwaves-bot.service`](deploy/wutheringwaves-bot.service). Adjust
+`User`, `WorkingDirectory`, and the venv path, then:
+
+```bash
+sudo cp deploy/wutheringwaves-bot.service /etc/systemd/system/
+sudo systemctl enable --now wutheringwaves-bot
+sudo journalctl -u wutheringwaves-bot -f
+```
+
 ## How it works
 
 Wuthering Waves displays your convene history as a webview inside the game. The URL for that webview — which includes your player ID and a session token — is written to a local log file. This tool reads that URL and queries the same Kuro API endpoint the game itself uses. No third-party servers involved; your data goes directly from Kuro's servers to your machine.
