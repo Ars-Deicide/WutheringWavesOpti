@@ -35,6 +35,37 @@ POOL_TYPES = {
 
 RARITY_COLOR = {5: "gold", 4: "purple", 3: "blue"}
 
+# ---------------------------------------------------------------------------
+# Time-limited collaboration banners
+# ---------------------------------------------------------------------------
+# Collab banners should only be selectable while the event is live. Populate
+# COLLAB_POOLS with the real Kuro cardPoolType IDs + display names; they auto-
+# hide once time.time() passes COLLAB_ENDS_AT. Leave COLLAB_POOLS empty to show
+# only the standard banners.
+COLLAB_ENDS_AT = 1783591555  # 2026-07-09 ~11:05 (10d 11h from 2026-06-29 setup)
+COLLAB_POOLS: dict[int, str] = {
+    # NOTE: pool IDs (8–11) are assumed sequential — display/gating works
+    # regardless, but fetching needs Kuro's real cardPoolType numbers. Update
+    # these if Fetch returns empty for a collab banner.
+    8:  "Dreaming Upon the Moon",
+    9:  "Rekindled Embers of Rage",
+    10: "Absolute Pulsation - Spectral Trigger",
+    11: "Absolute Pulsation - Skull Thrasher",
+}
+
+
+def collab_active() -> bool:
+    """True only while the collaboration event is live AND banners are configured."""
+    return bool(COLLAB_POOLS) and time.time() < COLLAB_ENDS_AT
+
+
+def available_pools() -> dict[int, str]:
+    """Standard banners, plus collab banners only while the event is live."""
+    pools = dict(POOL_TYPES)
+    if collab_active():
+        pools.update(COLLAB_POOLS)
+    return pools
+
 
 @dataclass
 class ConveneRecord:
@@ -46,50 +77,42 @@ class ConveneRecord:
     pull_number: int   # sequential pull index within the session
 
 
-def fetch_pool(creds: dict, pool_type: int, page_size: int = 20) -> list[ConveneRecord]:
-    """Fetch all records for a single banner pool, handling pagination."""
+def fetch_pool(creds: dict, pool_type: int) -> list[ConveneRecord]:
+    """Fetch all records for a single banner pool.
+
+    Kuro's gacha endpoint returns the pool's *entire* history in one response —
+    there is no cursor pagination. The previous version looped on `cardPoolId`
+    as if it were a cursor, but the API ignores it and returns the full list
+    every call, so the loop never terminated (len(items) stayed >= page_size)
+    and effectively hung. A single POST is all that's needed.
+    """
     endpoint = API_ENDPOINTS.get(creds.get("svr_area", "global"), API_ENDPOINTS["global"])
+    payload = {
+        "cardPoolId":   "0",
+        "cardPoolType": pool_type,
+        "languageCode": creds.get("lang", "en"),
+        "playerId":     creds["player_id"],
+        "recordId":     creds["record_id"],
+        "serverId":     creds["server_id"],
+    }
+
+    resp = requests.post(endpoint, json=payload, timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+
+    if data.get("code") != 0:
+        raise RuntimeError(f"API error {data.get('code')}: {data.get('message')}")
+
     records: list[ConveneRecord] = []
-    last_id = "0"
-    pull_index = 0
-
-    while True:
-        payload = {
-            "cardPoolId":   last_id,
-            "cardPoolType": pool_type,
-            "languageCode": creds.get("lang", "en"),
-            "playerId":     creds["player_id"],
-            "recordId":     creds["record_id"],
-            "serverId":     creds["server_id"],
-        }
-
-        resp = requests.post(endpoint, json=payload, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-
-        if data.get("code") != 0:
-            raise RuntimeError(f"API error {data.get('code')}: {data.get('message')}")
-
-        items = data.get("data", [])
-        if not items:
-            break
-
-        for item in items:
-            pull_index += 1
-            records.append(ConveneRecord(
-                name=item.get("name", "Unknown"),
-                type=item.get("resourceType", ""),
-                rarity=int(item.get("qualityLevel", 3)),
-                pool_type=pool_type,
-                pull_time=item.get("time", ""),
-                pull_number=pull_index,
-            ))
-
-        last_id = items[-1].get("id", "0")
-        time.sleep(0.05)
-
-        if len(items) < page_size:
-            break
+    for pull_index, item in enumerate(data.get("data", []), start=1):
+        records.append(ConveneRecord(
+            name=item.get("name", "Unknown"),
+            type=item.get("resourceType", ""),
+            rarity=int(item.get("qualityLevel", 3)),
+            pool_type=pool_type,
+            pull_time=item.get("time", ""),
+            pull_number=pull_index,
+        ))
 
     return records
 

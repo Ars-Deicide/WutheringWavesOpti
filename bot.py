@@ -3,6 +3,7 @@ WutheringWavesOpti — Discord Bot
 Run with: python bot.py
 """
 
+import logging
 import os
 import discord
 from discord.ext import commands
@@ -10,25 +11,37 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# This bot is slash-command-only, so the privileged message-content intent
+# isn't needed. Quiet discord.py's warning about it being absent (ERROR+ still
+# logs so real problems aren't hidden).
+logging.getLogger("discord.ext.commands.bot").setLevel(logging.ERROR)
+
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise RuntimeError("DISCORD_TOKEN not set in .env file. See README for setup instructions.")
 
 intents = discord.Intents.default()
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+INITIAL_EXTENSIONS = ("cogs.account", "cogs.convene", "cogs.echoes", "cogs.builds")
+
+
+class WuWaBot(commands.Bot):
+    async def setup_hook(self):
+        # Runs once, before the gateway connects — the correct place to load
+        # cogs and sync. (Doing this in on_ready re-runs on every reconnect and
+        # raises ExtensionAlreadyLoaded.)
+        for ext in INITIAL_EXTENSIONS:
+            await self.load_extension(ext)
+        synced = await self.tree.sync()
+        print(f"Synced {len(synced)} global command(s)")
+
+
+bot = WuWaBot(command_prefix="!", intents=intents)
 
 
 @bot.event
 async def on_ready():
-    await bot.load_extension("cogs.account")
-    await bot.load_extension("cogs.convene")
-    await bot.load_extension("cogs.echoes")
-    await bot.load_extension("cogs.builds")
-    synced = await bot.tree.sync()
-    for guild in bot.guilds:
-        await bot.tree.sync(guild=guild)
-    print(f"Logged in as {bot.user}  |  {len(synced)} global commands synced to {len(bot.guilds)} guild(s)")
+    print(f"Logged in as {bot.user}  |  in {len(bot.guilds)} guild(s)")
 
 
 @bot.tree.command(name="help", description="Show all WuWa Opti commands.")
@@ -41,6 +54,11 @@ async def help_cmd(interaction: discord.Interaction):
     embed.add_field(
         name="/link `url`",
         value="Link your WW account. Paste your convene URL from the game's Convene Records screen.",
+        inline=False
+    )
+    embed.add_field(
+        name="/autolink",
+        value="Auto-link by reading your convene URL straight from the local game log (same PC only).",
         inline=False
     )
     embed.add_field(
