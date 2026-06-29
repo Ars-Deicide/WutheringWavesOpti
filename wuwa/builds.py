@@ -884,8 +884,70 @@ BUILDS: dict[str, dict] = {
 }
 
 
+# Character portrait images (game8 CDN, hotlinkable /show URLs) injected into
+# build data via get_build(). Kept separate to keep BUILDS entries tidy.
+IMAGES: dict[str, str] = {
+    'Aalto': 'https://img.game8.co/3881731/791dd6376ae274a29e8794f34a93f44f.png/show',
+    'Aemeath': 'https://img.game8.co/4405787/5dd70f39e199aea233791ca8d2781336.png/show',
+    'Augusta': 'https://img.game8.co/4258420/5fc2426fb45527a2a5d3fd6d86641d1a.png/show',
+    'Baizhi': 'https://img.game8.co/4303116/fee43219645462f11309ac6b33074947.png/show',
+    'Brant': 'https://img.game8.co/4462690/7975c3a7ff99fb1fc4f01234f8405af5.png/show',
+    'Buling': 'https://img.game8.co/4305268/d8caf5a1a4736d83005505f2e402caa2.png/show',
+    'Calcharo': 'https://img.game8.co/3881741/8fab60225c8c4cfb01f3629b53e4f715.png/show',
+    'Camellya': 'https://img.game8.co/3989202/361a1fd88afa1402b47792bb78d21acc.png/show',
+    'Cantarella': 'https://img.game8.co/4112558/a621477078c614bb41f711b529fecd42.png/show',
+    'Carlotta': 'https://img.game8.co/4075183/20c62a18c4469173bb2fc3520867f705.png/show',
+    'Cartethyia': 'https://img.game8.co/4194024/843ce40cabed8a51e28f94c3a839e1ff.png/show',
+    'Changli': 'https://img.game8.co/4463684/8f9a61c2e1e52fef6cc4432c9cfdf576.png/show',
+    'Chisa': 'https://img.game8.co/4341621/9a155006b06bae145e00ba26f3b1d5ae.png/show',
+    'Chixia': 'https://img.game8.co/3881734/240df32c77833288334d17f51907babf.png/show',
+    'Ciaccona': 'https://img.game8.co/4303128/1656f548f03c8b83df5d5756bbcc3cc7.png/show',
+    'Danjin': 'https://img.game8.co/4303096/e5818f20b97dc740b31061ed3eeddcbd.png/show',
+    'Denia': 'https://img.game8.co/4503585/e0491f9e0e1a6f33ddae9fcf9ba2bbd1.png/show',
+    'Encore': 'https://img.game8.co/3881743/3d9d8a8e3d55cb96b3bc71eae3a86798.png/show',
+    'Galbrena': 'https://img.game8.co/4183865/0854fcbc0f69d784be2f27ca25e1bff0.png/show',
+    'Hiyuki': 'https://img.game8.co/4480005/c385065e7de76f481a9f3b0b7749c1eb.png/show',
+    'Iuno': 'https://img.game8.co/4281013/36f29c56ca68f5662b29d0a28ead50c5.png/show',
+    'Jianxin': 'https://img.game8.co/4339438/f0603e40482b817f5e6f96e7e20a2fd1.png/show',
+    'Jinhsi': 'https://img.game8.co/4303120/24763e189518dfc4e3f3aa650cacad2b.png/show',
+    'Jiyan': 'https://img.game8.co/4463687/dc04478844547edc67ed5fdf782234f8.png/show',
+    'Lingyang': 'https://img.game8.co/4303089/9e16af9146ba79fd821b9c7f00d44652.png/show',
+    'Lucilla': 'https://img.game8.co/4532361/3590c3c0e55be62911c3b2199bdb8442.png/show',
+    'Lucy': 'https://img.game8.co/4528263/050ccb046b00fe789302ecca565cf770.png/show',
+    'Lumi': 'https://img.game8.co/3990210/97cc0e3dcc6f7e4e62a4c031b04262fb.png/show',
+    'Lupa': 'https://img.game8.co/4167411/e7c3c324901cf5b269d59243f9e1dc57.png/show',
+    'Luuk Herssen': 'https://img.game8.co/4348718/0608a0afb76009c05bba4caa5b59d6ea.png/show',
+    'Lynae': 'https://img.game8.co/4373997/83b474004e479d2a3068e6ba841b4691.png/show',
+    'Mornye': 'https://img.game8.co/4384957/7088f506d1bbbeeac64534f234b22644.png/show',
+    'Mortefi': 'https://img.game8.co/3881736/cb6fd311d27a053c1dd8a773106523e7.png/show',
+    'Phoebe': 'https://img.game8.co/4107282/6d97544929c22a067892f3b3a15db58f.png/show',
+    'Phrolova': 'https://img.game8.co/4229956/919ffcc468fc752688b7690f67c31ebf.png/show',
+    'Qiuyuan': 'https://img.game8.co/4183802/3e57496c7f581e32ac195219a339f9f7.png/show',
+    'Rebecca': 'https://img.game8.co/4528262/b01fc2c129dd1870b50015b5f0f2eb5b.png/show',
+    'Roccia': 'https://img.game8.co/4234923/5a3828ede0260465eb1568f38824c6dc.png/show',
+    'Rover (Aero)': 'https://img.game8.co/4135586/e8e63936bfef45c294d3acffcb6e1a18.png/show',
+    'Rover (Havoc)': 'https://img.game8.co/3881729/7e2423968428c73b30e3cf6fc7397be2.png/show',
+    'Rover (Spectro)': 'https://img.game8.co/3881729/7e2423968428c73b30e3cf6fc7397be2.png/show',
+    'Sanhua': 'https://img.game8.co/4303110/6d077a23694618d6d9ee885a60a2f9f2.png/show',
+    'Sigrika': 'https://img.game8.co/4442463/fb582a715403f133855e7c97c781f8b0.png/show',
+    'Taoqi': 'https://img.game8.co/3881737/d50c626e2bc57046404351af8e030769.png/show',
+    'The Shorekeeper': 'https://img.game8.co/3945678/2dc074a2b5548ae32cd090b2ad7834b0.png/show',
+    'Verina': 'https://img.game8.co/3881739/f4b5a991ff3d3130a28d7297490b16ab.png/show',
+    'Xiangli Yao': 'https://img.game8.co/3930134/c527c25970e4a4b4eebe5eaf7e81c666.png/show',
+    'Yangyang': 'https://img.game8.co/4303112/923df17bc1a2c9894cb85c8c8053edb3.png/show',
+    'Yinlin': 'https://img.game8.co/4303122/f2572c97e3f89983fde9bd2acd504717.png/show',
+    'Youhu': 'https://img.game8.co/3945677/18a980b8d2c98a751f08f5ee61ed15ed.png/show',
+    'Yuanwu': 'https://img.game8.co/4303107/6b0b421e0da2416deb91ebddfe57a5ae.png/show',
+    'Zani': 'https://img.game8.co/4048770/8699c1afb695a6a5c76aef58201b447c.png/show',
+    'Zhezhi': 'https://img.game8.co/3930135/6b7e616a83ccad07bb7b7a30031cda0d.png/show',
+}
+
+
 def get_build(name: str) -> dict | None:
-    return BUILDS.get(name)
+    b = BUILDS.get(name)
+    if b is not None and "image" not in b and name in IMAGES:
+        b = {**b, "image": IMAGES[name]}
+    return b
 
 
 def get_all_names() -> list[str]:
