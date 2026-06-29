@@ -61,6 +61,9 @@ class Builds(commands.Cog):
         sets_str = "\n".join(f"• {s}" for s in data["echo_sets"])
         embed.add_field(name="Echo Sets", value=sets_str, inline=False)
 
+        if data.get("main_echo"):
+            embed.add_field(name="Main Echo (4-cost)", value=data["main_echo"], inline=False)
+
         mains = data["echo_mains"]
         mains_lines = [
             f"4★ (4-cost): **{mains.get('4-cost', '—')}**",
@@ -72,10 +75,35 @@ class Builds(commands.Cog):
         substats_str = " > ".join(data["substats"])
         embed.add_field(name="Substat Priority", value=substats_str, inline=False)
 
+        if data.get("skill_priority"):
+            embed.add_field(name="Skill Priority (Forte)", value=data["skill_priority"], inline=False)
+
+        cost = data.get("full_build_cost")
+        if cost:
+            cost_lines = [
+                f"**Shell Credits:** ~{cost['shell_credits']:,}",
+                f"**Character EXP:** {cost['character_exp']}",
+                f"**Ascension:** {cost['ascension_counts']}",
+                f"**Forte (all skills):** {cost['forte_counts']}",
+            ]
+            embed.add_field(name="Full Build Cost (Lv.90 + all skills)", value="\n".join(cost_lines), inline=False)
+
+        mats = data.get("materials")
+        if mats:
+            mats_lines = [
+                f"**Specialty:** {mats['specialty']}",
+                f"**Boss (ascension):** {mats['boss']}",
+                f"**Enemy core:** {mats['enemy_core']}",
+                f"**Forte forgery:** {mats['forgery']}",
+                f"**Weekly boss:** {mats['weekly_boss']}",
+            ]
+            embed.add_field(name="Character Materials", value="\n".join(mats_lines), inline=False)
+
         if data.get("notes"):
             embed.add_field(name="Notes", value=data["notes"], inline=False)
 
-        embed.set_footer(text=f"Source: prydwen.gg  ·  Last updated patch {data.get('patch', '?')}  ·  Click title to open full guide")
+        mat_note = "" if mats else "  ·  character-specific mats: see in-game"
+        embed.set_footer(text=f"Build: prydwen.gg/game8.co  ·  patch {data.get('patch', '?')}  ·  cost totals are standardized{mat_note}")
         await interaction.response.send_message(embed=embed)
 
 

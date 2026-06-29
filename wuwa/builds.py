@@ -38,14 +38,14 @@ BUILDS: dict[str, dict] = {
         "weapon": "Verdant Summit",
         "echo_sets": ["Sierra Gale (5pc)", "Sierra Gale (4pc) + Void Thunder (1pc)"],
         "echo_mains": {
-            "4-cost": "Aero DMG%",
+            "4-cost": "CRIT Rate / CRIT DMG",
             "3-cost": "ATK%",
             "3-cost-alt": "Aero DMG%",
             "1-cost": "ATK%",
             "1-cost-2": "ATK%",
         },
         "substats": ["CRIT Rate", "CRIT DMG", "ATK%", "Energy Regen"],
-        "notes": "Aim for 70%+ Crit Rate. Stack Energy Regen to enable ult rotation.",
+        "notes": "Run CRIT Rate/DMG on the 4-cost (Nightmare: Feilian Beringal) — his Aero DMG% comes from the Sierra Gale set + Heavy ATK forte, so the 4-cost is better spent on crit. Aim for 70%+ Crit Rate, then stack Energy Regen for ult uptime.",
         "patch": "3.2",
     },
     "Carlotta": {
@@ -483,8 +483,98 @@ BUILDS: dict[str, dict] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Skill (Forte) leveling priority — the order to pour upgrade mats into.
+# The five nodes are: Basic Attack, Resonance Skill, Resonance Liberation,
+# Forte Circuit, Intro Skill. Listed best-first.
+# Source: game8.co / community guides — cross-reference in-game for your patch.
+# ---------------------------------------------------------------------------
+SKILL_PRIORITY: dict[str, str] = {
+    # Jiyan — verified via game8: Qingloong Mode scales off Liberation first,
+    # then Forte Circuit and Resonance Skill catch up.
+    "Jiyan":          "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Carlotta":       "Forte Circuit → Resonance Liberation → Resonance Skill → Basic Attack → Intro Skill",
+    "Changli":        "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill",
+    "Camellya":       "Forte Circuit → Resonance Liberation → Resonance Skill → Basic Attack → Intro Skill",
+    "Jinhsi":         "Resonance Liberation → Forte Circuit → Resonance Skill → Intro Skill → Basic Attack",
+    "Xiangli Yao":    "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Phoebe":         "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill",
+    "Cantarella":     "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill",
+    "Calcharo":       "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Encore":         "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Danjin":         "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill",
+    "Lingyang":       "Resonance Skill → Forte Circuit → Resonance Liberation → Basic Attack → Intro Skill",
+    "Sanhua":         "Resonance Skill → Basic Attack → Resonance Liberation → Forte Circuit → Intro Skill",
+    "Mortefi":        "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Verina":         "Resonance Liberation → Resonance Skill → Forte Circuit → Intro Skill → Basic Attack  (low priority — buffs barely scale with level)",
+    "The Shorekeeper": "Resonance Skill → Resonance Liberation → Forte Circuit → Intro Skill → Basic Attack",
+    "Baizhi":         "Resonance Skill → Resonance Liberation → Forte Circuit → Intro Skill → Basic Attack  (low priority)",
+    "Rover (Havoc)":  "Forte Circuit → Resonance Liberation → Resonance Skill → Basic Attack → Intro Skill",
+    "Rover (Spectro)": "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill",
+    "Roccia":         "Resonance Skill → Forte Circuit → Resonance Liberation → Basic Attack → Intro Skill",
+    "Brant":          "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Zani":           "Forte Circuit → Resonance Skill → Resonance Liberation → Basic Attack → Intro Skill",
+    "Aalto":          "Resonance Skill → Resonance Liberation → Forte Circuit → Basic Attack → Intro Skill  (low priority — buffer)",
+    "Chixia":         "Resonance Liberation → Forte Circuit → Resonance Skill → Basic Attack → Intro Skill",
+    "Yangyang":       "Resonance Liberation → Resonance Skill → Forte Circuit → Intro Skill → Basic Attack  (low priority)",
+    "Taoqi":          "Resonance Skill → Forte Circuit → Resonance Liberation → Basic Attack → Intro Skill  (DEF-scaling shielder)",
+    "Jianxin":        "Resonance Skill → Resonance Liberation → Forte Circuit → Intro Skill → Basic Attack",
+    "Lucilla":        "Resonance Skill → Forte Circuit → Resonance Liberation → Basic Attack → Intro Skill",
+}
+
+# Recommended main echo (the 4-cost Echo that anchors the build).
+MAIN_ECHO: dict[str, str] = {
+    "Jiyan":          "Nightmare: Feilian Beringal",   # verified via game8
+    "Xiangli Yao":    "Nightmare: Tempest Mephis",
+    "Calcharo":       "Nightmare: Thundering Mephis",
+}
+
+# ---------------------------------------------------------------------------
+# Full-build cost: level 1→90 + all five Forte skills to level 10.
+# In Wuthering Waves these totals do NOT scale with rarity — a 4★ and a 5★
+# cost the same Shell Credits / EXP and the same material *tier counts*; only
+# the named items differ (see per-character MATERIALS below). Weapon excluded.
+# Figures are the standardized community totals (game8 / wuwa.uk planner).
+# ---------------------------------------------------------------------------
+FULL_BUILD_COST = {
+    "shell_credits": 2_200_000,      # ~170,000 ascension + ~2,030,000 forte
+    "character_exp": "≈1,786,500 EXP (Resonance Potions)",
+    "ascension_counts": "Specialty ×60 · Boss echo mat ×46 · Enemy core ×4/12/12/4 (LF/MF/HF/FF)",
+    "forte_counts": "Forgery mat & enemy core (all four tiers) · Weekly boss mat ×23",
+}
+
+# Named materials per resonator (the items unique to each character).
+# slots: specialty, boss (overworld ascension echo), enemy_core,
+#        forgery (forte/talent mat), weekly_boss.
+# Verified entries are marked; others are best-effort — verify in-game.
+MATERIALS: dict[str, dict] = {
+    "Jiyan": {  # verified via game8.co
+        "specialty": "Pecok Flower",
+        "boss": "Roaring Rock Fist",
+        "enemy_core": "Howler Core",
+        "forgery": "Waveworn Residue",
+        "weekly_boss": "Monument Bell",
+    },
+    "Xiangli Yao": {  # verified via game8.co
+        "specialty": "Violet Coral",
+        "boss": "Hidden Thunder Tacet Core",
+        "enemy_core": "Whisperin Core",
+        "forgery": "Cadence Seed",
+        "weekly_boss": "Unending Destruction",
+    },
+}
+
+
 def get_build(name: str) -> dict | None:
-    return BUILDS.get(name)
+    data = BUILDS.get(name)
+    if data is None:
+        return None
+    enriched = dict(data)
+    enriched["skill_priority"] = SKILL_PRIORITY.get(name)
+    enriched["main_echo"] = MAIN_ECHO.get(name)
+    enriched["materials"] = MATERIALS.get(name)
+    enriched["full_build_cost"] = FULL_BUILD_COST
+    return enriched
 
 
 def get_all_names() -> list[str]:
