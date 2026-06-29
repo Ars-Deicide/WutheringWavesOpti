@@ -565,6 +565,36 @@ MATERIALS: dict[str, dict] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Character art (transparent / "backgroundless" splash cutouts).
+#
+# We don't bundle the art (it's Kuro's copyrighted assets) — instead the embed
+# pulls each portrait by URL so you can point it at whatever host you like:
+#   • Set WUWA_IMAGE_BASE to a folder/CDN of transparent PNGs named by slug,
+#     e.g. WUWA_IMAGE_BASE="https://cdn.example.com/wuwa/portraits" makes Jiyan
+#     resolve to ".../jiyan.png" (slug via prydwen_slug()).
+#   • Or drop explicit per-character URLs in IMAGE_OVERRIDES below (wins over
+#     the base). Use this for one-offs or when a name doesn't match the slug.
+# If neither is configured, the embed simply shows no image (graceful).
+# ---------------------------------------------------------------------------
+import os
+
+IMAGE_OVERRIDES: dict[str, str] = {
+    # "Jiyan": "https://.../jiyan-cutout.png",
+}
+
+IMAGE_EXT = os.environ.get("WUWA_IMAGE_EXT", "png")
+
+
+def image_url(name: str) -> str | None:
+    if name in IMAGE_OVERRIDES:
+        return IMAGE_OVERRIDES[name]
+    base = os.environ.get("WUWA_IMAGE_BASE")
+    if not base:
+        return None
+    return f"{base.rstrip('/')}/{prydwen_slug(name)}.{IMAGE_EXT}"
+
+
 def get_build(name: str) -> dict | None:
     data = BUILDS.get(name)
     if data is None:
@@ -574,6 +604,7 @@ def get_build(name: str) -> dict | None:
     enriched["main_echo"] = MAIN_ECHO.get(name)
     enriched["materials"] = MATERIALS.get(name)
     enriched["full_build_cost"] = FULL_BUILD_COST
+    enriched["image"] = image_url(name)
     return enriched
 
 

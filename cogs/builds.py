@@ -52,6 +52,10 @@ class Builds(commands.Cog):
             color=color,
         )
 
+        # Transparent character art, if an image source is configured.
+        if data.get("image"):
+            embed.set_image(url=data["image"])
+
         embed.add_field(
             name="Element / Weapon",
             value=f"{data.get('element', '—')} · {data['weapon']}",
