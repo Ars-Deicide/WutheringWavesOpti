@@ -165,11 +165,23 @@ def fetch_all(creds: dict, pools: list[int] | None = None, force: bool = False) 
                 return _from_cache(cached), True
 
     results: dict[int, list[ConveneRecord]] = {}
+    errors: list[Exception] = []
     with ThreadPoolExecutor(max_workers=len(pools)) as executor:
         futures = {executor.submit(fetch_pool, creds, p): p for p in pools}
         for future in as_completed(futures):
             pool_type = futures[future]
-            results[pool_type] = future.result()
+            try:
+                results[pool_type] = future.result()
+            except Exception as e:
+                # A single failing pool (e.g. an unknown collab cardPoolType, or a
+                # transient API hiccup) must not abort the whole fetch.
+                results[pool_type] = []
+                errors.append(e)
+
+    # If every pool failed, it's a real error (almost always expired creds) —
+    # surface it so the caller can tell the user, rather than caching emptiness.
+    if errors and len(errors) == len(pools):
+        raise errors[0]
 
     _save_cache(results)
     return results, False

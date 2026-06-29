@@ -14,6 +14,19 @@ STAR4 = 0xB966E7
 GOLD  = 0xEAB820
 
 
+def _fetch_error_embed() -> discord.Embed:
+    return discord.Embed(
+        title="❌ Couldn't fetch convene history",
+        description=(
+            "Kuro's API rejected the request — your convene link has most likely "
+            "**expired** (they're only valid for a short while after opening Convene "
+            "History in-game).\n\n"
+            "Re-link with **/autolink** (same PC) or **/link**, then try again."
+        ),
+        color=0xD94040,
+    )
+
+
 def _selectable_pools() -> dict[int, str]:
     """Banners shown as toggles: the 4 standard banners, plus collab banners
     while the collaboration event is live."""
@@ -123,7 +136,11 @@ class FetchButton(discord.ui.Button):
             source  = "cached"
         else:
             loop    = asyncio.get_event_loop()
-            results = await loop.run_in_executor(None, lambda: fetch_all(creds, pools, force=True)[0])
+            try:
+                results = await loop.run_in_executor(None, lambda: fetch_all(creds, pools, force=True)[0])
+            except Exception:
+                await interaction.followup.send(embed=_fetch_error_embed(), ephemeral=True)
+                return
             set_cache(user_id, results)
             source  = "live"
 
@@ -153,7 +170,11 @@ class RefreshButton(discord.ui.Button):
         pools   = list(self.view.selected)
 
         loop    = asyncio.get_event_loop()
-        results = await loop.run_in_executor(None, lambda: fetch_all(creds, pools, force=True)[0])
+        try:
+            results = await loop.run_in_executor(None, lambda: fetch_all(creds, pools, force=True)[0])
+        except Exception:
+            await interaction.followup.send(embed=_fetch_error_embed(), ephemeral=True)
+            return
         set_cache(user_id, results)
 
         embeds = [_pool_embed(pid, records)
