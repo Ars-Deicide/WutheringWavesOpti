@@ -1,0 +1,6 @@
+.credentials.json
+.convene_cache.json
+.env
+data/
+__pycache__/
+*.pyc
