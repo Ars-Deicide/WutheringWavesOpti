@@ -87,7 +87,7 @@ RESONATOR_ARCHETYPES: dict[str, str] = {
     # --- Aero ---
     "Aalto":            "atk_dps",
     "Jiyan":            "crit_dps",
-    "Jianxin":          "tank",
+    "Jianxin":          "support",
     "Yangyang":         "support",
     # --- Electro ---
     "Calcharo":         "crit_dps",
