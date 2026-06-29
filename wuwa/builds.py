@@ -36,7 +36,7 @@ BUILDS: dict[str, dict] = {
         "role": "Main DPS",
         "element": "Aero",
         "weapon": "Verdant Summit",
-        "echo_sets": ["Sierra Gale (5pc)", "Sierra Gale (4pc) + Void Thunder (1pc)"],
+        "echo_sets": ["Sierra Gale (5pc)"],
         "echo_mains": {
             "4-cost": "Aero DMG%",
             "3-cost": "ATK%",
@@ -45,7 +45,9 @@ BUILDS: dict[str, dict] = {
             "1-cost-2": "ATK%",
         },
         "substats": ["CRIT Rate", "CRIT DMG", "ATK%", "Energy Regen"],
-        "notes": "Aim for 70%+ Crit Rate. Stack Energy Regen to enable ult rotation.",
+        "skill_priority": "Resonance Liberation > Forte Circuit ≈ Resonance Skill > Basic Attack > Intro Skill",
+        "materials": "**Ascension:** Roaring Rock Fist (Feilian Beringal boss), Pecok Flower ×60, Howler Cores, 170k Shell.\n**Talents:** Waveworn Residue (forgery), Monument Bell (weekly boss), Howler Cores, ~2.03M Shell.",
+        "notes": "Heavy-Attack Aero DPS. Main echo Nightmare: Feilian Beringal. Aim 70%+ Crit Rate; stack Energy Regen for ult rotation.",
         "patch": "3.2",
     },
     "Carlotta": {

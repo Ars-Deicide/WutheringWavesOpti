@@ -52,6 +52,9 @@ class Builds(commands.Cog):
             color=color,
         )
 
+        if data.get("image"):
+            embed.set_thumbnail(url=data["image"])
+
         embed.add_field(
             name="Element / Weapon",
             value=f"{data.get('element', '—')} · {data['weapon']}",
@@ -71,6 +74,12 @@ class Builds(commands.Cog):
 
         substats_str = " > ".join(data["substats"])
         embed.add_field(name="Substat Priority", value=substats_str, inline=False)
+
+        if data.get("skill_priority"):
+            embed.add_field(name="Skill Upgrade Priority", value=data["skill_priority"], inline=False)
+
+        if data.get("materials"):
+            embed.add_field(name="Ascension / Skill Materials", value=data["materials"], inline=False)
 
         if data.get("notes"):
             embed.add_field(name="Notes", value=data["notes"], inline=False)
