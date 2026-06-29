@@ -65,7 +65,11 @@ async def help_cmd(interaction: discord.Interaction):
     )
     embed.add_field(
         name="/build `resonator`",
-        value="Show the optimal echo sets, main stats, and substat priority for a resonator. Links to Prydwen.gg for the full guide.",
+        value=(
+            "Full build sheet for a resonator: echo sets, main echo, main stats, "
+            "substat & skill (Forte) priority, and the total materials + Shell "
+            "Credits for a Lv.90 / all-skills build. Sourced from Prydwen.gg & Game8."
+        ),
         inline=False
     )
     embed.set_footer(text="Your credentials are stored privately and never shared.")

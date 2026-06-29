@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    image: wutheringwaves-opti
+    container_name: wutheringwaves-opti
+    restart: unless-stopped
+    env_file: .env
+    # Persist linked accounts + convene cache (wuwa/store.py writes to ./data).
+    volumes:
+      - ./data:/app/data

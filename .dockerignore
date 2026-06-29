@@ -1,0 +1,12 @@
+.git
+.gitignore
+__pycache__/
+*.pyc
+.env
+.credentials.json
+.convene_cache.json
+data/
+README.md
+Dockerfile
+docker-compose.yml
+*.service
